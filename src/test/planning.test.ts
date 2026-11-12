@@ -13,7 +13,10 @@ describe("order parser", () => {
   });
   it("parses Hinglish", () => {
     const r = parseOrderText("ek masala dosa aur chai", SEED_MENU);
-    expect(r.items.map((i) => [i.itemId, i.qty])).toEqual([["masala-dosa", 1], ["masala-chai", 1]]);
+    expect(r.items.map((i) => [i.itemId, i.qty])).toEqual([
+      ["masala-dosa", 1],
+      ["masala-chai", 1],
+    ]);
   });
   it("asks which dosa when only 'dosa' is given", () => {
     const r = parseOrderText("do dosa", SEED_MENU);

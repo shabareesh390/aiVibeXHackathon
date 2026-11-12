@@ -8,7 +8,10 @@ import { wait } from "./util";
 /** Minutes of prep the cart needs before its earliest pickup. */
 export function prepMinutes(cart: CartItem[]) {
   const { menu } = useAppStore.getState();
-  return Math.max(4, ...cart.map((l) => (menu.find((m) => m.id === l.itemId)?.durationMin ?? 0) + 2));
+  return Math.max(
+    4,
+    ...cart.map((l) => (menu.find((m) => m.id === l.itemId)?.durationMin ?? 0) + 2),
+  );
 }
 
 /**
@@ -44,7 +47,13 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
       : load === "amber"
         ? `Busy: ${stationName} station is nearly full`
         : `Quiet: ready within 2 min of arrival`;
-    slots.push({ startTime: t, readyBy: t - MIN, load: full ? "red" : load, reason, capacityLeft: full ? 0 : worst.left });
+    slots.push({
+      startTime: t,
+      readyBy: t - MIN,
+      load: full ? "red" : load,
+      reason,
+      capacityLeft: full ? 0 : worst.left,
+    });
   }
 
   // Recommend: earliest free slot, earliest any-open slot, and the quietest overall
@@ -53,7 +62,9 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
   const firstGreen = open.find((s) => s.load === "green");
   if (open[0]) picks.add(open[0].startTime);
   if (firstGreen) picks.add(firstGreen.startTime);
-  for (const s of [...open].sort((a, b) => (a.load === b.load ? a.startTime - b.startTime : a.load === "green" ? -1 : 1))) {
+  for (const s of [...open].sort((a, b) =>
+    a.load === b.load ? a.startTime - b.startTime : a.load === "green" ? -1 : 1,
+  )) {
     if (picks.size >= 3) break;
     picks.add(s.startTime);
   }

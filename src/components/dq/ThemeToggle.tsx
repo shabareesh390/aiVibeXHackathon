@@ -16,7 +16,12 @@ export function ThemeToggle() {
     localStorage.setItem("dequeue.theme", next ? "dark" : "light");
   };
   return (
-    <Button variant="ghost" size="icon" onClick={toggle} aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggle}
+      aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+    >
       {dark ? <Sun /> : <Moon />}
     </Button>
   );

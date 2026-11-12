@@ -5,10 +5,22 @@ import type { CartItem } from "@/types";
 import { inr } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
-export function CartList({ cart, onChange, readOnly }: { cart: CartItem[]; onChange?: (c: CartItem[]) => void; readOnly?: boolean }) {
+export function CartList({
+  cart,
+  onChange,
+  readOnly,
+}: {
+  cart: CartItem[];
+  onChange?: (c: CartItem[]) => void;
+  readOnly?: boolean;
+}) {
   const menu = useAppStore((s) => s.menu);
-  const update = (i: number, patch: Partial<CartItem>) => onChange?.(cart.map((l, j) => (j === i ? { ...l, ...patch } : l)));
-  const total = cart.reduce((s, l) => s + (menu.find((m) => m.id === l.itemId)?.price ?? 0) * l.qty, 0);
+  const update = (i: number, patch: Partial<CartItem>) =>
+    onChange?.(cart.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const total = cart.reduce(
+    (s, l) => s + (menu.find((m) => m.id === l.itemId)?.price ?? 0) * l.qty,
+    0,
+  );
   return (
     <div className="rounded-2xl border bg-card shadow-soft">
       <ul className="divide-y">
@@ -28,24 +40,74 @@ export function CartList({ cart, onChange, readOnly }: { cart: CartItem[]; onCha
               {(line.modifiers.length > 0 || (!readOnly && unused.length > 0)) && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {line.modifiers.map((mod) => (
-                    <span key={mod} className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                    <span
+                      key={mod}
+                      className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground"
+                    >
                       {mod}
-                      {!readOnly && <button type="button" aria-label={`Remove ${mod}`} onClick={() => update(i, { modifiers: line.modifiers.filter((x) => x !== mod) })}><X className="size-3" /></button>}
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${mod}`}
+                          onClick={() =>
+                            update(i, { modifiers: line.modifiers.filter((x) => x !== mod) })
+                          }
+                        >
+                          <X className="size-3" />
+                        </button>
+                      )}
                     </span>
                   ))}
-                  {!readOnly && unused.map((mod) => (
-                    <button key={mod} type="button" onClick={() => update(i, { modifiers: [...line.modifiers, mod] })} className="rounded-full border border-dashed px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">+ {mod}</button>
-                  ))}
+                  {!readOnly &&
+                    unused.map((mod) => (
+                      <button
+                        key={mod}
+                        type="button"
+                        onClick={() => update(i, { modifiers: [...line.modifiers, mod] })}
+                        className="rounded-full border border-dashed px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+                      >
+                        + {mod}
+                      </button>
+                    ))}
                 </div>
               )}
               {!readOnly ? (
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-1 rounded-full bg-secondary p-1">
-                    <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full" aria-label={`One less ${m.name}`} onClick={() => update(i, { qty: Math.max(1, line.qty - 1) })}><Minus /></Button>
-                    <span className="w-6 text-center font-semibold tabular" aria-live="polite">{line.qty}</span>
-                    <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full" aria-label={`One more ${m.name}`} onClick={() => update(i, { qty: line.qty + 1 })}><Plus /></Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9 rounded-full"
+                      aria-label={`One less ${m.name}`}
+                      onClick={() => update(i, { qty: Math.max(1, line.qty - 1) })}
+                    >
+                      <Minus />
+                    </Button>
+                    <span className="w-6 text-center font-semibold tabular" aria-live="polite">
+                      {line.qty}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9 rounded-full"
+                      aria-label={`One more ${m.name}`}
+                      onClick={() => update(i, { qty: line.qty + 1 })}
+                    >
+                      <Plus />
+                    </Button>
                   </div>
-                  <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onChange?.(cart.filter((_, j) => j !== i))}><Trash2 />Remove</Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => onChange?.(cart.filter((_, j) => j !== i))}
+                  >
+                    <Trash2 />
+                    Remove
+                  </Button>
                 </div>
               ) : (
                 <p className="mt-1 text-sm text-muted-foreground">Qty {line.qty}</p>

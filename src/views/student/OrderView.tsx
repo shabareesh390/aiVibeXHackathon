@@ -16,10 +16,23 @@ import { useSession } from "@/store/sessionStore";
 import type { CartItem } from "@/types";
 import { format } from "date-fns";
 
-type SR = { start: () => void; stop: () => void; lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: () => void };
+type SR = {
+  start: () => void;
+  stop: () => void;
+  lang: string;
+  interimResults: boolean;
+  onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+  onend: () => void;
+  onerror: () => void;
+};
 
 const toInput = (ms?: number) => (ms ? format(ms, "HH:mm") : "");
-const fromInput = (v: string) => { const [h = 0, m = 0] = v.split(":").map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime(); };
+const fromInput = (v: string) => {
+  const [h = 0, m = 0] = v.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.getTime();
+};
 
 export function OrderView() {
   const ready = useAppStore((s) => s.ready);
@@ -32,50 +45,89 @@ export function OrderView() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const w = window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR };
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SR;
+      webkitSpeechRecognition?: new () => SR;
+    };
     setSpeechOk(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
   }, []);
 
   const toggleMic = () => {
-    if (listening) { recRef.current?.stop(); return; }
-    const w = window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR };
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SR;
+      webkitSpeechRecognition?: new () => SR;
+    };
     const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (!Ctor) { toast.error("Voice input isn't supported in this browser"); return; }
+    if (!Ctor) {
+      toast.error("Voice input isn't supported in this browser");
+      return;
+    }
     const rec = new Ctor();
     rec.lang = "en-IN";
     rec.interimResults = true;
-    rec.onresult = (e) => set({ text: Array.from(e.results).map((r) => r[0]?.transcript ?? "").join(" ") });
+    rec.onresult = (e) =>
+      set({
+        text: Array.from(e.results)
+          .map((r) => r[0]?.transcript ?? "")
+          .join(" "),
+      });
     rec.onend = () => setListening(false);
-    rec.onerror = () => { setListening(false); toast.error("Couldn't hear that. Try again or type it."); };
+    rec.onerror = () => {
+      setListening(false);
+      toast.error("Couldn't hear that. Try again or type it.");
+    };
     recRef.current = rec;
     rec.start();
     setListening(true);
   };
 
   const understand = async () => {
-    if (!text.trim()) { toast("Tell us what you'd like first"); return; }
+    if (!text.trim()) {
+      toast("Tell us what you'd like first");
+      return;
+    }
     setLoading(true);
     const r = await parseOrder(text);
     setLoading(false);
     const merged = [...cart];
     for (const it of r.items) {
-      const ex = merged.find((m) => m.itemId === it.itemId && m.modifiers.join() === it.modifiers.join());
-      if (ex) ex.qty += it.qty; else merged.push(it);
+      const ex = merged.find(
+        (m) => m.itemId === it.itemId && m.modifiers.join() === it.modifiers.join(),
+      );
+      if (ex) ex.qty += it.qty;
+      else merged.push(it);
     }
-    set({ cart: merged, unresolved: r.unresolved, window: r.readyBy ? { asap: false, start: Date.now(), end: r.readyBy } : win });
+    set({
+      cart: merged,
+      unresolved: r.unresolved,
+      window: r.readyBy ? { asap: false, start: Date.now(), end: r.readyBy } : win,
+    });
     if (r.notFound.length) toast.warning(`Not on today's menu: ${r.notFound.join(", ")}`);
-    else if (r.items.length) toast.success(`Added ${r.items.reduce((s, i) => s + i.qty, 0)} item(s) to your cart`);
+    else if (r.items.length)
+      toast.success(`Added ${r.items.reduce((s, i) => s + i.qty, 0)} item(s) to your cart`);
   };
 
   const resolve = (uid: string, itemId: string) => {
     const u = unresolved.find((x) => x.id === uid);
     if (!u) return;
-    set({ cart: [...cart, { itemId, qty: u.qty, modifiers: u.modifiers }], unresolved: unresolved.filter((x) => x.id !== uid), text: "" });
+    set({
+      cart: [...cart, { itemId, qty: u.qty, modifiers: u.modifiers }],
+      unresolved: unresolved.filter((x) => x.id !== uid),
+      text: "",
+    });
   };
 
   const quickAdd = (itemId: string) => {
     const ex = cart.find((c) => c.itemId === itemId && c.modifiers.length === 0);
-    set({ cart: ex ? cart.map((c) => (c === ex ? { ...c, qty: c.qty + 1 } : c)) : [...cart, { itemId, qty: 1, modifiers: [] } as CartItem] });
+    set({
+      cart: ex
+        ? cart.map((c) => (c === ex ? { ...c, qty: c.qty + 1 } : c))
+        : [...cart, { itemId, qty: 1, modifiers: [] } as CartItem],
+    });
   };
 
   if (!ready) {
@@ -101,11 +153,15 @@ export function OrderView() {
       <div className="space-y-6">
         <section>
           <h1 className="font-display text-2xl font-bold md:text-3xl">What are you craving?</h1>
-          <p className="text-sm text-muted-foreground md:text-base">Type or say it the way you'd tell a friend.</p>
+          <p className="text-sm text-muted-foreground md:text-base">
+            Type or say it the way you'd tell a friend.
+          </p>
         </section>
 
         <section className="rounded-2xl border bg-card p-3 shadow-soft focus-within:ring-2 focus-within:ring-ring md:p-4">
-          <Label htmlFor="order-text" className="sr-only">Your order</Label>
+          <Label htmlFor="order-text" className="sr-only">
+            Your order
+          </Label>
           <Textarea
             id="order-text"
             value={text}
@@ -139,11 +195,17 @@ export function OrderView() {
               {loading ? <Loader2 className="animate-spin" /> : <Sparkles />}Understand my order
             </Button>
           </div>
-          {listening && <p className="mt-2 text-sm text-primary" aria-live="polite">Listening… speak now</p>}
+          {listening && (
+            <p className="mt-2 text-sm text-primary" aria-live="polite">
+              Listening… speak now
+            </p>
+          )}
         </section>
 
         <section aria-label="Quick add">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick add popular items</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Quick add popular items
+          </p>
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0">
             {quick.map((m) => (
               <button
@@ -162,17 +224,33 @@ export function OrderView() {
           <section className="space-y-3" aria-label="Needs a quick answer">
             {unresolved.map((u) => (
               <div key={u.id} className="rounded-2xl border-2 border-primary/40 bg-accent/60 p-4">
-                <p className="font-semibold">{u.question} <span className="font-normal text-muted-foreground">(“{u.phrase}”, ×{u.qty})</span></p>
+                <p className="font-semibold">
+                  {u.question}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (“{u.phrase}”, ×{u.qty})
+                  </span>
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {u.options.map((id) => {
                     const m = menu.find((x) => x.id === id)!;
                     return (
-                      <Button key={id} type="button" variant="outline" className="h-11 rounded-full" onClick={() => resolve(u.id, id)}>
+                      <Button
+                        key={id}
+                        type="button"
+                        variant="outline"
+                        className="h-11 rounded-full"
+                        onClick={() => resolve(u.id, id)}
+                      >
                         {m.name}
                       </Button>
                     );
                   })}
-                  <Button type="button" variant="ghost" className="h-11 rounded-full text-muted-foreground" onClick={() => set({ unresolved: unresolved.filter((x) => x.id !== u.id) })}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-11 rounded-full text-muted-foreground"
+                    onClick={() => set({ unresolved: unresolved.filter((x) => x.id !== u.id) })}
+                  >
                     Skip
                   </Button>
                 </div>
@@ -188,21 +266,35 @@ export function OrderView() {
           {cart.length ? (
             <CartList cart={cart} onChange={(c) => set({ cart: c })} />
           ) : (
-            <EmptyState icon={<UtensilsCrossed />} title="Cart is empty" body="Describe your order or tap a quick-add chip." />
+            <EmptyState
+              icon={<UtensilsCrossed />}
+              title="Cart is empty"
+              body="Describe your order or tap a quick-add chip."
+            />
           )}
         </section>
 
         <section className="rounded-2xl border bg-card p-4 shadow-soft">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <Label htmlFor="asap" className="text-base font-semibold">As soon as possible</Label>
+              <Label htmlFor="asap" className="text-base font-semibold">
+                As soon as possible
+              </Label>
               <p className="text-sm text-muted-foreground">Or set the window when you're free.</p>
             </div>
             <Switch
               id="asap"
               checked={win.asap}
               onCheckedChange={(v) =>
-                set({ window: v ? { asap: true } : { asap: false, start: Date.now() + 15 * 60_000, end: Date.now() + 60 * 60_000 } })
+                set({
+                  window: v
+                    ? { asap: true }
+                    : {
+                        asap: false,
+                        start: Date.now() + 15 * 60_000,
+                        end: Date.now() + 60 * 60_000,
+                      },
+                })
               }
             />
           </div>
@@ -215,7 +307,9 @@ export function OrderView() {
                   type="time"
                   className="h-12 rounded-xl"
                   value={toInput(win.start)}
-                  onChange={(e) => e.target.value && set({ window: { ...win, start: fromInput(e.target.value) } })}
+                  onChange={(e) =>
+                    e.target.value && set({ window: { ...win, start: fromInput(e.target.value) } })
+                  }
                 />
               </div>
               <div className="space-y-1.5">
@@ -225,7 +319,9 @@ export function OrderView() {
                   type="time"
                   className="h-12 rounded-xl"
                   value={toInput(win.end)}
-                  onChange={(e) => e.target.value && set({ window: { ...win, end: fromInput(e.target.value) } })}
+                  onChange={(e) =>
+                    e.target.value && set({ window: { ...win, end: fromInput(e.target.value) } })
+                  }
                 />
               </div>
             </div>
@@ -240,7 +336,9 @@ export function OrderView() {
           Find pickup slots
         </Button>
         {unresolved.length > 0 && (
-          <p className="-mt-3 text-center text-sm text-muted-foreground">Answer the question above to continue.</p>
+          <p className="-mt-3 text-center text-sm text-muted-foreground">
+            Answer the question above to continue.
+          </p>
         )}
       </div>
     </div>

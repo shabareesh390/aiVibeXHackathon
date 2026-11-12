@@ -40,8 +40,14 @@ function freshData(): AppData {
 }
 
 const pickData = (s: AppState): AppData => ({
-  menu: s.menu, stations: s.stations, orders: s.orders, batchProgress: s.batchProgress,
-  notifications: s.notifications, activity: s.activity, nextNumber: s.nextNumber, seededAt: s.seededAt,
+  menu: s.menu,
+  stations: s.stations,
+  orders: s.orders,
+  batchProgress: s.batchProgress,
+  notifications: s.notifications,
+  activity: s.activity,
+  nextNumber: s.nextNumber,
+  seededAt: s.seededAt,
 });
 
 let started = false;

@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
 > published git history — force pushing, or rebasing/amending/squashing commits
@@ -27,9 +28,11 @@ use the editor.
   `LOVABLE_API_KEY`. When Lovable does not provide one, users can bring their
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
+
 <!-- LOVABLE:END -->
 
 ## Dequeue architecture
+
 - All data access goes through `src/services/*` (typed async fns marked `TODO: replace with real API call`); components never mutate the store directly — keeps a real API swappable.
 - Shared state lives in the Zustand store `src/store/appStore.ts`, persisted to localStorage and synced across tabs via BroadcastChannel; it boots client-side only (`useAppReady`) because seed data is relative to the current time.
 - Screen components live in `src/views/*`; route files in `src/routes` stay thin (head + component).

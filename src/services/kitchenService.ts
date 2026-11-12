@@ -40,7 +40,11 @@ export async function markBatch(batch: Batch, state: "started" | "done"): Promis
   const s = useAppStore.getState();
   const progress = { ...s.batchProgress, [batch.key]: state };
   const now = Date.now();
-  let orders = s.orders.map((o) => (batch.orderIds.includes(o.id) && o.status === "scheduled" ? { ...o, status: "cooking" as const } : o));
+  let orders = s.orders.map((o) =>
+    batch.orderIds.includes(o.id) && o.status === "scheduled"
+      ? { ...o, status: "cooking" as const }
+      : o,
+  );
   const notifications = [...s.notifications];
   const activity = [...s.activity];
   if (state === "done") {
@@ -52,12 +56,29 @@ export async function markBatch(batch: Batch, state: "started" | "done"): Promis
       });
       if (!allDone) return o;
       const shelf = nextShelf(orders);
-      notifications.unshift({ id: uid(), orderId: o.id, title: `Order #${o.number} is ready`, body: `Pick it up from shelf ${shelf}.`, at: now, read: false });
-      activity.unshift({ id: uid(), at: now, kind: "ready", text: `#${o.number} ready on shelf ${shelf}` });
+      notifications.unshift({
+        id: uid(),
+        orderId: o.id,
+        title: `Order #${o.number} is ready`,
+        body: `Pick it up from shelf ${shelf}.`,
+        at: now,
+        read: false,
+      });
+      activity.unshift({
+        id: uid(),
+        at: now,
+        kind: "ready",
+        text: `#${o.number} ready on shelf ${shelf}`,
+      });
       return { ...o, status: "ready" as const, shelf, readyAt: now };
     });
   }
-  useAppStore.setState({ batchProgress: progress, orders, notifications, activity: activity.slice(0, 40) });
+  useAppStore.setState({
+    batchProgress: progress,
+    orders,
+    notifications,
+    activity: activity.slice(0, 40),
+  });
 }
 
 // TODO: replace with real API call
@@ -66,8 +87,18 @@ export async function markCollected(orderId: string): Promise<void> {
   const s = useAppStore.getState();
   const o = s.orders.find((x) => x.id === orderId);
   useAppStore.setState({
-    orders: s.orders.map((x) => (x.id === orderId ? { ...x, status: "collected" as const, collectedAt: Date.now() } : x)),
-    activity: [{ id: uid(), at: Date.now(), kind: "collected" as const, text: `#${o?.number} collected by ${o?.studentName}` }, ...s.activity].slice(0, 40),
+    orders: s.orders.map((x) =>
+      x.id === orderId ? { ...x, status: "collected" as const, collectedAt: Date.now() } : x,
+    ),
+    activity: [
+      {
+        id: uid(),
+        at: Date.now(),
+        kind: "collected" as const,
+        text: `#${o?.number} collected by ${o?.studentName}`,
+      },
+      ...s.activity,
+    ].slice(0, 40),
   });
 }
 
@@ -81,7 +112,10 @@ export async function replan(input: ReplanInput): Promise<Order[]> {
   const now = Date.now();
   const affected: Order[] = [];
   const notifications = [...s.notifications];
-  const reason = input.type === "delay" ? "the kitchen is running behind" : `the ${s.stations.find((x) => x.id === input.station)?.name.toLowerCase()} station is down`;
+  const reason =
+    input.type === "delay"
+      ? "the kitchen is running behind"
+      : `the ${s.stations.find((x) => x.id === input.station)?.name.toLowerCase()} station is down`;
   const downUntil = input.type === "stationDown" ? ceilToSlot(now + input.minutes * MIN) : 0;
 
   const orders = s.orders.map((o) => {
@@ -90,14 +124,27 @@ export async function replan(input: ReplanInput): Promise<Order[]> {
     if (input.type === "delay") {
       to = o.slotTime + input.minutes * MIN;
     } else {
-      const uses = o.items.some((l) => s.menu.find((m) => m.id === l.itemId)?.station === input.station);
+      const uses = o.items.some(
+        (l) => s.menu.find((m) => m.id === l.itemId)?.station === input.station,
+      );
       if (!uses || o.slotTime >= downUntil) return o;
       to = o.slotTime + (downUntil - floorToSlot(now)); // shift by the outage, keeping order spacing
     }
     if (to === o.slotTime) return o;
-    const moved: Order = { ...o, slotTime: to, reslot: { from: o.reslot?.from ?? o.slotTime, to, reason, acknowledged: false } };
+    const moved: Order = {
+      ...o,
+      slotTime: to,
+      reslot: { from: o.reslot?.from ?? o.slotTime, to, reason, acknowledged: false },
+    };
     affected.push(moved);
-    notifications.unshift({ id: uid(), orderId: o.id, title: `Pickup moved to ${fmtTime(to)}`, body: `Your pickup moved from ${fmtTime(o.slotTime)} to ${fmtTime(to)} because ${reason}.`, at: now, read: false });
+    notifications.unshift({
+      id: uid(),
+      orderId: o.id,
+      title: `Pickup moved to ${fmtTime(to)}`,
+      body: `Your pickup moved from ${fmtTime(o.slotTime)} to ${fmtTime(to)} because ${reason}.`,
+      at: now,
+      read: false,
+    });
     return moved;
   });
 
@@ -113,8 +160,18 @@ export async function replan(input: ReplanInput): Promise<Order[]> {
   }
 
   useAppStore.setState({
-    orders, notifications, batchProgress: progress,
-    activity: [{ id: uid(), at: now, kind: "replan" as const, text: `Re-planned: ${affected.length} orders moved because ${reason}` }, ...s.activity].slice(0, 40),
+    orders,
+    notifications,
+    batchProgress: progress,
+    activity: [
+      {
+        id: uid(),
+        at: now,
+        kind: "replan" as const,
+        text: `Re-planned: ${affected.length} orders moved because ${reason}`,
+      },
+      ...s.activity,
+    ].slice(0, 40),
   });
   return affected;
 }

@@ -32,7 +32,12 @@ export function bookedBySlot(orders: Order[], menu: MenuItem[]) {
   return map;
 }
 
-export function slotStationRatio(booked: Map<number, Record<StationId, number>>, slot: number, station: Station, extra = 0) {
+export function slotStationRatio(
+  booked: Map<number, Record<StationId, number>>,
+  slot: number,
+  station: Station,
+  extra = 0,
+) {
   const used = (booked.get(slot)?.[station.id] ?? 0) + extra;
   return used / usableCapacity(station);
 }
@@ -63,7 +68,17 @@ export function buildBatches(
         g.qty += line.qty;
         if (!g.orderIds.includes(o.id)) g.orderIds.push(o.id);
       } else {
-        groups.set(key, { key, itemId: m.id, itemName: m.name, station: m.station, qty: line.qty, startTime: 0, pickupTime: o.slotTime, orderIds: [o.id], state: "upcoming" });
+        groups.set(key, {
+          key,
+          itemId: m.id,
+          itemName: m.name,
+          station: m.station,
+          qty: line.qty,
+          startTime: 0,
+          pickupTime: o.slotTime,
+          orderIds: [o.id],
+          state: "upcoming",
+        });
       }
     }
   }

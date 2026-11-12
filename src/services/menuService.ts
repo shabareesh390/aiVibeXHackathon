@@ -20,15 +20,35 @@ export async function updateItem(id: string, patch: Partial<MenuItem>): Promise<
   await wait(120);
   const s = useAppStore.getState();
   const menu = s.menu.map((m) => (m.id === id ? { ...m, ...patch } : m));
-  useAppStore.setState({ menu, activity: [{ id: uid(), at: Date.now(), kind: "menu" as const, text: `Menu updated: ${menu.find((m) => m.id === id)?.name}` }, ...s.activity].slice(0, 40) });
+  useAppStore.setState({
+    menu,
+    activity: [
+      {
+        id: uid(),
+        at: Date.now(),
+        kind: "menu" as const,
+        text: `Menu updated: ${menu.find((m) => m.id === id)?.name}`,
+      },
+      ...s.activity,
+    ].slice(0, 40),
+  });
   return menu.find((m) => m.id === id)!;
 }
 
 // TODO: replace with real API call
 export async function addItem(item: Omit<MenuItem, "id">): Promise<MenuItem> {
   await wait(200);
-  const created: MenuItem = { ...item, id: `${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${uid().slice(0, 4)}` };
+  const created: MenuItem = {
+    ...item,
+    id: `${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${uid().slice(0, 4)}`,
+  };
   const s = useAppStore.getState();
-  useAppStore.setState({ menu: [...s.menu, created], activity: [{ id: uid(), at: Date.now(), kind: "menu" as const, text: `Added to menu: ${created.name}` }, ...s.activity].slice(0, 40) });
+  useAppStore.setState({
+    menu: [...s.menu, created],
+    activity: [
+      { id: uid(), at: Date.now(), kind: "menu" as const, text: `Added to menu: ${created.name}` },
+      ...s.activity,
+    ].slice(0, 40),
+  });
   return created;
 }

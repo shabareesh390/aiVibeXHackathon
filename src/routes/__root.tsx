@@ -83,13 +83,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Dequeue — campus canteen pre-orders" },
-      { name: "description", content: "Order in plain language, pick a pickup slot the kitchen can actually make." },
+      {
+        name: "description",
+        content: "Order in plain language, pick a pickup slot the kitchen can actually make.",
+      },
       { name: "theme-color", content: "#f08a24" },
       { property: "og:title", content: "Dequeue — campus canteen pre-orders" },
-      { property: "og:description", content: "Order in plain language, pick a pickup slot the kitchen can actually make." },
+      {
+        property: "og:description",
+        content: "Order in plain language, pick a pickup slot the kitchen can actually make.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      
     ],
     links: [
       {
@@ -101,7 +106,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/icon.svg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,

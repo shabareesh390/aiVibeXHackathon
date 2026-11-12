@@ -125,8 +125,7 @@ export interface ActivityEvent {
 }
 
 export type ReplanInput =
-  | { type: "delay"; minutes: number }
-  | { type: "stationDown"; station: StationId; minutes: number };
+  { type: "delay"; minutes: number } | { type: "stationDown"; station: StationId; minutes: number };
 
 export interface StationLoad {
   station: StationId;

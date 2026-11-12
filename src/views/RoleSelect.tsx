@@ -11,10 +11,38 @@ import { useSession } from "@/store/sessionStore";
 import type { Role } from "@/types";
 import { cn } from "@/lib/utils";
 
-const ROLES: { id: Role; label: string; body: string; icon: typeof ChefHat; to: "/student/order" | "/kitchen" | "/manager/dashboard"; defaultName: string }[] = [
-  { id: "student", label: "Student", body: "Order in your own words, grab a pickup slot.", icon: GraduationCap, to: "/student/order", defaultName: "Ananya" },
-  { id: "kitchen", label: "Kitchen", body: "Batched cooking plan on the tablet.", icon: ChefHat, to: "/kitchen", defaultName: "Kitchen crew" },
-  { id: "manager", label: "Manager", body: "Demand, slot load and menu.", icon: LineChart, to: "/manager/dashboard", defaultName: "Mr. Iyer" },
+const ROLES: {
+  id: Role;
+  label: string;
+  body: string;
+  icon: typeof ChefHat;
+  to: "/student/order" | "/kitchen" | "/manager/dashboard";
+  defaultName: string;
+}[] = [
+  {
+    id: "student",
+    label: "Student",
+    body: "Order in your own words, grab a pickup slot.",
+    icon: GraduationCap,
+    to: "/student/order",
+    defaultName: "Ananya",
+  },
+  {
+    id: "kitchen",
+    label: "Kitchen",
+    body: "Batched cooking plan on the tablet.",
+    icon: ChefHat,
+    to: "/kitchen",
+    defaultName: "Kitchen crew",
+  },
+  {
+    id: "manager",
+    label: "Manager",
+    body: "Demand, slot load and menu.",
+    icon: LineChart,
+    to: "/manager/dashboard",
+    defaultName: "Mr. Iyer",
+  },
 ];
 
 export function RoleSelect() {
@@ -39,7 +67,8 @@ export function RoleSelect() {
       </div>
       <section className="mt-10 md:mt-14 md:text-center">
         <h1 className="font-display text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl">
-          Skip the canteen queue.<br />
+          Skip the canteen queue.
+          <br />
           <span className="text-primary">Eat on time.</span>
         </h1>
         <p className="mt-3 text-muted-foreground md:mx-auto md:mt-4 md:max-w-xl md:text-lg">
@@ -49,7 +78,9 @@ export function RoleSelect() {
 
       <form onSubmit={go} className="mt-8 space-y-6 md:mt-12">
         <fieldset>
-          <legend className="mb-3 text-sm font-semibold md:text-center md:text-base">I am using Dequeue as</legend>
+          <legend className="mb-3 text-sm font-semibold md:text-center md:text-base">
+            I am using Dequeue as
+          </legend>
           <div className="grid gap-4 md:grid-cols-3">
             {ROLES.map((r) => (
               <label
@@ -70,7 +101,9 @@ export function RoleSelect() {
                 <span
                   className={cn(
                     "grid size-12 place-items-center rounded-xl md:size-14",
-                    role === r.id ? "bg-warm text-primary-foreground" : "bg-secondary text-secondary-foreground",
+                    role === r.id
+                      ? "bg-warm text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground",
                   )}
                 >
                   <r.icon className="size-6 md:size-7" />
