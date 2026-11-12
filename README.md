@@ -175,6 +175,14 @@ npm run preview
 
 ---
 
+## 👥 Contributors
+
+- **Shabareesh S Gowda**
+- **Samahith Jain**
+- **Jnanesh Gowda**
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
