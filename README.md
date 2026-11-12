@@ -1,3 +1,4 @@
+
 # ⚡ Dequeue
 
 > **Smart Campus Canteen Queue Busting & Real-Time Kitchen Orchestration**  
@@ -22,17 +23,17 @@ During 15-minute lecture breaks, 200+ students rush into the college canteen sim
 
 ## 💡 The Solution
 
-**Dequeue** is an end-to-end canteen ordering and kitchen management system built specifically for high-density campus environments. It bridges the gap between hungry students and fast-paced kitchen staff through conversational NLP ordering, dynamic load-balanced pickup slots, and intelligent station batching.
+**Dequeue** is an end-to-end canteen ordering and kitchen management system built specifically for high-density campus environments. It bridges the gap between hungry students and fast-paced kitchen staff through dynamic load-balanced pickup slots, intelligent station batching, and real-time order tracking.
 
 ```
        [ Student ]                                    [ Kitchen Crew ]
-  Types in Hinglish / Voice                      Receives Auto-Batched Tasks
- "2 masala dosa, ek cold coffee"                     Grouped by Station & Slot
+     Selects & Orders                            Receives Auto-Batched Tasks
+  Campus Meals in Real-Time                          Grouped by Station & Slot
               │                                                ▲
               ▼                                                │
    ┌──────────────────────┐    Calculates Load     ┌──────────────────────┐
-   │ NLP Intent & Entity  │ ─────────────────────► │ Capacity & Slot      │
-   │ Parser (Hinglish/EN) │   (Green/Amber/Red)    │ Allocator (5m Slots) │
+   │ Order & Cart Engine  │ ─────────────────────► │ Capacity & Slot      │
+   │ Dynamic Validation   │   (Green/Amber/Red)    │ Allocator (5m Slots) │
    └──────────────────────┘                        └──────────────────────┘
               │                                                │
               ▼                                                ▼
@@ -44,14 +45,7 @@ During 15-minute lecture breaks, 200+ students rush into the college canteen sim
 
 ## ✨ Key Features
 
-### 1. 🗣️ Conversational Hinglish & Natural Language Ordering
-- Type or speak naturally: *"2 masala dosa bina pyaaz and ek cold coffee 1:15 tak"*.
-- **Entity & Quantity Extraction:** Recognizes Hindi/Hinglish and English numerals (`ek`, `do`, `teen`, `single`, `couple`, `char`, `paanch`).
-- **Modifier Detection:** Extracts customizations like `bina pyaaz`, `extra butter`, `less spicy`, `without ice`.
-- **Family Disambiguation:** Asks smart clarifying questions when input is ambiguous (e.g., typing *"dosa"* prompts *"Which dosa? Plain, Masala, or Cheese Onion?"*).
-- **Requested Ready-By Time:** Automatically infers target pickup slots from natural phrases (`"1:15 tak"`, `"in 10 mins"`).
-
-### 2. ⏱️ Dynamic Slot Allocation & Kitchen Load Engine
+### 1. ⏱️ Dynamic Slot Allocation & Kitchen Load Engine
 - Divides time into **5-minute pickup windows**.
 - Tracks real-time throughput across four independent kitchen preparation stations:
   - 🍳 **Tawa Station:** Dosa, uttapam, parottas (governed by hotplate surface area).
@@ -63,17 +57,17 @@ During 15-minute lecture breaks, 200+ students rush into the college canteen sim
   - 🟡 **Amber (60% – 85% load):** Busy, slots filling up quickly.
   - 🔴 **Red (> 85% load):** Capped capacity; safely routes next orders to the subsequent slot to prevent kitchen meltdowns.
 
-### 3. 🍳 Kitchen Display System (KDS) & Smart Batching
+### 2. 🍳 Kitchen Display System (KDS) & Smart Batching
 - Tablet-optimized view designed specifically for kitchen staff.
 - Aggregates disparate orders into consolidated cooking batches (e.g., *"Make 6 Masala Dosas now"* rather than 6 individual tickets).
 - Single-tap status transitions: `Queued` ➔ `In Progress` ➔ `Ready`.
 
-### 4. 📱 Live Student Tracking & Token Handoff
+### 3. 📱 Live Student Tracking & Token Handoff
 - Clean, mobile-friendly order status dashboard.
 - Live countdown timer with estimated ready time and token number.
 - Push/visual notifications alert students the exact second their order arrives at the pickup counter.
 
-### 5. 📊 Manager Dashboard & Demand Forecasting
+### 4. 📊 Manager Dashboard & Demand Forecasting
 - Live load distribution across all stations.
 - Station throughput metrics and revenue tracking.
 - Instant menu controls: toggle availability or update stock counts with immediate cross-system propagation.
@@ -161,7 +155,7 @@ npm run preview
 
 1. **Student (`/student/order`)**:
    - Choose your persona or enter your name.
-   - Use the natural language input bar to order in plain English or Hinglish.
+   - Browse the menu and add items to your cart.
    - Select an available 5-minute pickup slot (guided by green/amber load badges).
    - Track your order live with real-time countdown to collection.
 
