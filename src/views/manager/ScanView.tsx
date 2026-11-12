@@ -3,11 +3,14 @@ import {
   Camera,
   CameraOff,
   CheckCircle2,
+  Info,
   MessageSquareQuote,
   PackageCheck,
   QrCode,
   Search,
+  ShieldAlert,
   Sparkles,
+  Upload,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
@@ -27,11 +30,13 @@ export function ScanView() {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isPermissionDenied, setIsPermissionDenied] = useState(false);
   const [manualInput, setManualInput] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [handingOver, setHandingOver] = useState(false);
@@ -40,6 +45,36 @@ export function ScanView() {
   const readyOrders = orders
     .filter((o) => o.status === "ready")
     .sort((a, b) => (a.shelf ?? 99) - (b.shelf ?? 99));
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code && code.data) {
+            processScannedString(code.data);
+          } else {
+            toast.error("No valid QR code found in the image. You can enter the Token # below.");
+          }
+        }
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const stopCamera = () => {
     if (animFrameRef.current) {
@@ -55,6 +90,7 @@ export function ScanView() {
 
   const startCamera = async () => {
     setCameraError(null);
+    setIsPermissionDenied(false);
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera API not supported on this browser.");
@@ -71,7 +107,16 @@ export function ScanView() {
       }
     } catch (err: any) {
       console.warn("Camera start failed:", err);
-      setCameraError(err?.message || "Could not open camera. Please check camera permissions.");
+      const isDenied =
+        err?.name === "NotAllowedError" ||
+        err?.message?.toLowerCase().includes("permission denied") ||
+        err?.message?.toLowerCase().includes("not allowed");
+      setIsPermissionDenied(isDenied);
+      setCameraError(
+        isDenied
+          ? "Camera permission was denied by the browser or Windows system settings."
+          : err?.message || "Could not open camera.",
+      );
       setCameraActive(false);
     }
   };
@@ -201,19 +246,57 @@ export function ScanView() {
             )}
 
             {!cameraActive && (
-              <div className="p-8 text-center text-white/80 space-y-3">
-                <CameraOff className="size-10 mx-auto text-white/50" />
-                <p className="text-xs max-w-xs mx-auto">
-                  {cameraError || "Camera inactive. Enter token manually or use a USB barcode gun."}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-xl text-xs bg-white/10 hover:bg-white/20 text-white border-white/20"
-                  onClick={startCamera}
-                >
-                  <Camera className="size-3.5 mr-1" /> Re-open Camera
-                </Button>
+              <div className="p-6 text-center text-white/90 space-y-3.5 max-w-md mx-auto">
+                {isPermissionDenied ? (
+                  <div className="rounded-2xl border border-destructive/40 bg-destructive/20 p-3.5 text-left text-xs space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-red-200">
+                      <ShieldAlert className="size-4 shrink-0 text-red-400" />
+                      <span>Camera Blocked by Browser or Windows</span>
+                    </div>
+                    <ol className="list-decimal pl-4 space-y-1 text-white/80 text-[11px] leading-relaxed">
+                      <li>
+                        <strong>Browser:</strong> Click the <strong>lock / site settings icon (🔒)</strong> in the URL address bar &rarr; Set <strong>Camera</strong> to <strong>Allow</strong>.
+                      </li>
+                      <li>
+                        <strong>Windows:</strong> Open <strong>Settings &rarr; Privacy & security &rarr; Camera</strong> &rarr; Switch ON <strong>"Let desktop apps access your camera"</strong>.
+                      </li>
+                    </ol>
+                  </div>
+                ) : (
+                  <div>
+                    <CameraOff className="size-10 mx-auto text-white/50" />
+                    <p className="text-xs text-white/80 mt-2">
+                      {cameraError || "Camera inactive. You can upload a photo of the QR code or enter token below."}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl text-xs bg-white/10 hover:bg-white/20 text-white border-white/25"
+                    onClick={startCamera}
+                  >
+                    <Camera className="size-3.5 mr-1.5" /> Retry Camera
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl text-xs bg-primary/20 hover:bg-primary/30 text-primary border-primary/40 font-semibold"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="size-3.5 mr-1.5" /> Upload QR Photo
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleImageFile}
+                  />
+                </div>
               </div>
             )}
           </div>
