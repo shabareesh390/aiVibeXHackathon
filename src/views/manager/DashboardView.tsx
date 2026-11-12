@@ -8,6 +8,7 @@ import {
   Flame,
   Gauge,
   Minus,
+  MessageSquareQuote,
   Plus,
   QrCode,
   Repeat,
@@ -452,12 +453,23 @@ export function DashboardView() {
                       #{o.number}
                     </TableCell>
                     <TableCell className="font-medium text-sm">{o.studentName}</TableCell>
-                    <TableCell className="text-xs max-w-xs truncate">
-                      {o.items
-                        .map(
-                          (l) => `${l.qty}x ${menu.find((m) => m.id === l.itemId)?.name ?? "Item"}`,
-                        )
-                        .join(", ")}
+                    <TableCell className="text-xs max-w-xs">
+                      <p className="truncate">
+                        {o.items
+                          .map(
+                            (l) => `${l.qty}x ${menu.find((m) => m.id === l.itemId)?.name ?? "Item"}`,
+                          )
+                          .join(", ")}
+                      </p>
+                      {o.instructions && (
+                        <div
+                          className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-md px-1.5 py-0.5 w-fit max-w-[260px] truncate"
+                          title={o.instructions}
+                        >
+                          <MessageSquareQuote className="size-3 shrink-0" />
+                          <span className="truncate">Note: {o.instructions}</span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="font-bold tabular">{inr(o.total)}</TableCell>
                     <TableCell className="tabular text-xs">{fmtTimeAmPm(o.slotTime)}</TableCell>
@@ -970,6 +982,17 @@ export function DashboardView() {
                   ))}
                 </ul>
               </div>
+
+              {selectedOrder.instructions && (
+                <div className="rounded-xl border border-amber-500/35 bg-amber-500/15 p-3 text-xs text-amber-800 dark:text-amber-200">
+                  <p className="font-bold flex items-center gap-1.5 uppercase tracking-wide text-amber-700 dark:text-amber-300 mb-1">
+                    <MessageSquareQuote className="size-4" /> Special Student Instructions:
+                  </p>
+                  <p className="font-semibold italic text-foreground bg-background/60 rounded-lg p-2 border border-border">
+                    "{selectedOrder.instructions}"
+                  </p>
+                </div>
+              )}
 
               <div className="flex justify-between border-t pt-3 text-base font-bold">
                 <span>Total</span>

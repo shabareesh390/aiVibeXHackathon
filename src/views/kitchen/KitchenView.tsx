@@ -8,6 +8,7 @@ import {
   Flame,
   LayoutGrid,
   ListOrdered,
+  MessageSquareQuote,
   Package,
   QrCode,
   Search,
@@ -146,9 +147,15 @@ function KitchenOrderCard({
       </ul>
 
       {order.instructions && (
-        <p className="mt-2 text-xs italic text-primary/80 bg-accent/40 rounded p-1.5">
-          Note: {order.instructions}
-        </p>
+        <div className="mt-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 p-2 text-xs text-amber-800 dark:text-amber-200">
+          <p className="font-bold flex items-center gap-1 text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
+            <MessageSquareQuote className="size-3.5" />
+            Special Instructions:
+          </p>
+          <p className="font-semibold italic mt-0.5 text-foreground">
+            "{order.instructions}"
+          </p>
+        </div>
       )}
 
       <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
@@ -657,6 +664,27 @@ export function KitchenView() {
                           pickup ({b.orderIds.length} {b.orderIds.length === 1 ? "order" : "orders"}
                           )
                         </p>
+                        {(() => {
+                          const batchInstructions = b.orderIds
+                            .map((id) => orders.find((o) => o.id === id))
+                            .filter((o) => !!o?.instructions)
+                            .map((o) => ({ number: o!.number, text: o!.instructions! }));
+                          if (!batchInstructions.length) return null;
+                          return (
+                            <div className="mt-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                              <p className="font-bold flex items-center gap-1 text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                                <MessageSquareQuote className="size-3.5" /> Special Instructions:
+                              </p>
+                              <ul className="mt-1 space-y-1">
+                                {batchInstructions.map((ins, idx) => (
+                                  <li key={idx} className="font-semibold italic text-foreground">
+                                    • Order #{ins.number}: "{ins.text}"
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          );
+                        })()}
                       </div>
                       <div className="flex gap-3">
                         <Button
@@ -720,6 +748,11 @@ export function KitchenView() {
                           <p className="text-5xl font-extrabold tabular">{o.shelf}</p>
                         </div>
                       </div>
+                      {o.instructions && (
+                        <p className="mt-1.5 text-xs font-semibold italic text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-lg px-2 py-1">
+                          Note: {o.instructions}
+                        </p>
+                      )}
                       {tooLong && (
                         <p className="mt-2 text-lg font-bold text-load-full">
                           Held {held} min — call the student

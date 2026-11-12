@@ -20,3 +20,4 @@ export const Route = createFileRoute("/manager/scan")({
   }),
   component: ScanView,
 });
+

@@ -4,6 +4,7 @@ import {
   CameraOff,
   CheckCircle2,
   Clock,
+  MessageSquareQuote,
   PackageCheck,
   QrCode,
   Search,
@@ -316,9 +317,15 @@ export function OrderQRScannerModal({
                 })}
               </ul>
               {selectedOrder.instructions && (
-                <p className="mt-2 text-xs italic bg-accent/40 rounded p-2 text-primary font-medium">
-                  Special note: {selectedOrder.instructions}
-                </p>
+                <div className="mt-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                  <p className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                    <MessageSquareQuote className="size-3.5" />
+                    Special Student Request:
+                  </p>
+                  <p className="font-semibold italic mt-0.5 text-foreground">
+                    "{selectedOrder.instructions}"
+                  </p>
+                </div>
               )}
             </div>
 

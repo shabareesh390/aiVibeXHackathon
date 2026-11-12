@@ -3,6 +3,7 @@ import {
   Camera,
   CameraOff,
   CheckCircle2,
+  MessageSquareQuote,
   PackageCheck,
   QrCode,
   Search,
@@ -361,9 +362,14 @@ export function ScanView() {
                   })}
                 </ul>
                 {selectedOrder.instructions && (
-                  <p className="text-xs italic bg-accent/40 rounded-xl p-3 text-primary font-medium">
-                    Note: {selectedOrder.instructions}
-                  </p>
+                  <div className="mt-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 p-3 text-xs text-amber-800 dark:text-amber-200">
+                    <p className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      <MessageSquareQuote className="size-4" /> Special Student Request:
+                    </p>
+                    <p className="font-semibold italic mt-1 text-foreground bg-background/60 p-2 rounded-lg border border-border">
+                      "{selectedOrder.instructions}"
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -422,3 +428,4 @@ export function ScanView() {
     </div>
   );
 }
+

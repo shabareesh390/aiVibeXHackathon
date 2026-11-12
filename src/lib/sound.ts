@@ -25,3 +25,4 @@ export function playScanSuccessSound() {
     /* audio blocked or unavailable */
   }
 }
+
