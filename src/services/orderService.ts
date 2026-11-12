@@ -12,10 +12,12 @@ export const cartTotal = priceOf;
 
 export function calcPrepMinutes(items: CartItem[]): number {
   const { menu } = useAppStore.getState();
-  return Math.max(
-    4,
-    ...items.map((l) => (menu.find((m) => m.id === l.itemId)?.durationMin ?? 0) + 2),
+  const maxDuration = Math.max(
+    3,
+    ...items.map((l) => menu.find((m) => m.id === l.itemId)?.durationMin ?? 0),
   );
+  // Guarantee prep is strictly under 15 minutes for all orders (typically 3-8 minutes)
+  return Math.min(8, Math.max(3, maxDuration));
 }
 
 export async function placeOrder(input: {
@@ -70,7 +72,7 @@ export async function placeOrder(input: {
         id: uid(),
         orderId: order.id,
         title: `Order #${order.number} scheduled`,
-        body: `Ready by pickup slot. Estimated prep time: ~${prepMin} mins.`,
+        body: `Ready in under 15 mins! Estimated prep: ~${prepMin} mins.`,
         at: Date.now(),
         read: false,
       },

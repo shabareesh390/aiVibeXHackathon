@@ -121,6 +121,7 @@ function KitchenOrderCard({
         <div className="text-right">
           <span className="text-xs text-muted-foreground">Pickup</span>
           <p className="font-bold tabular text-sm">{fmtTime(order.slotTime)}</p>
+          <span className="text-[10px] font-semibold text-primary">⚡ &lt;15m target</span>
         </div>
       </div>
 

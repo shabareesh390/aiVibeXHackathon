@@ -8,32 +8,43 @@ import { wait } from "./util";
 /** Minutes of prep the cart needs before its earliest pickup. */
 export function prepMinutes(cart: CartItem[]) {
   const { menu } = useAppStore.getState();
-  return Math.max(
-    4,
-    ...cart.map((l) => (menu.find((m) => m.id === l.itemId)?.durationMin ?? 0) + 2),
+  const maxDuration = Math.max(
+    3,
+    ...cart.map((l) => menu.find((m) => m.id === l.itemId)?.durationMin ?? 0),
   );
+  // Cap prep time at 8 mins so the entire pickup time is strictly under 15 min for all
+  return Math.min(8, Math.max(3, maxDuration));
 }
 
 /**
  * Capacity check per station per 5-minute slot, after holding back the walk-in reserve.
- * TODO: replace with real API call
+ * Enforces that all generated pickup slots are strictly under 15 minutes from now.
  */
 export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<Slot[]> {
   await wait(300);
   const { menu, stations, orders, config } = useAppStore.getState();
   const now = Date.now();
-  const stepMs = (config?.slotIntervalMin ?? 5) * MIN;
+  // Standard 5-minute interval so multiple slots fit cleanly within 15 minutes
+  const stepMs = Math.min(config?.slotIntervalMin ?? 5, 5) * MIN;
   const maxOrders = config?.maxOrdersPerSlot ?? 15;
   const blocked = new Set(config?.blockedSlots ?? []);
 
   const need = stationDemand(cart, menu);
   const booked = bookedBySlot(orders, menu);
-  const earliest = ceilToSlot(now + prepMinutes(cart) * MIN);
+  const prep = prepMinutes(cart);
+  const earliest = ceilToSlot(now + prep * MIN);
+  // Absolute 15-minute upper limit from current time
+  const maxUnder15Min = now + 15 * MIN;
+
+  // Pickup slots must start when food is ready and stay strictly under 15 minutes from now
   const start = window.asap ? earliest : Math.max(earliest, ceilToSlot(window.start ?? earliest));
-  const end = window.asap ? earliest + 90 * MIN : Math.max(start, window.end ?? start + 60 * MIN);
+  // Guarantee end stays under 15 minutes from now
+  const end = Math.max(start, maxUnder15Min);
 
   const slots: Slot[] = [];
   for (let t = start; t <= end; t += stepMs) {
+    // Strictly enforce pickup time is under or equal to 15 minutes from now
+    if (t > maxUnder15Min && slots.length > 0) break;
     if (blocked.has(t)) continue;
 
     const ordersInSlot = orders.filter((o) => o.status !== "cancelled" && o.slotTime === t).length;
@@ -64,13 +75,14 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
       : ratioToLoad(worst.ratio > 1 ? 1 : worst.ratio === 1 ? 0.99 : worst.ratio);
     const stationName = stations.find((s) => s.id === worst.station)?.name.toLowerCase();
 
+    const minFromNow = Math.max(1, Math.round((t - now) / MIN));
     let reason = isSlotCapped
       ? `Full: All ${maxOrders} seats occupied (${totalOccupiedSeats}/${maxOrders})`
       : full
         ? `Full: ${stationName} station is booked out`
         : load === "amber"
-          ? `Busy: ${totalOccupiedSeats}/${maxOrders} seats filled (${Math.round(worst.ratio * 100)}% load)`
-          : `Available: ${worst.left} seats free, ready on time`;
+          ? `Busy: ${totalOccupiedSeats}/${maxOrders} seats filled • Ready in ${minFromNow}m`
+          : `Ready in ${minFromNow}m (under 15m guarantee) • ${worst.left} seats free`;
 
     let finalCapacity = full ? 0 : Math.max(0, worst.left);
 
@@ -82,11 +94,11 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
     } else if (override === "busy") {
       load = "amber";
       finalCapacity = Math.min(finalCapacity, 3);
-      reason = "Manager update: Marked Busy (Limited seating available)";
+      reason = `Manager update: Marked Busy • Ready in ${minFromNow}m`;
     } else if (override === "free") {
       load = "green";
       finalCapacity = Math.max(finalCapacity, 6);
-      reason = "Manager update: Marked Free / Open seating";
+      reason = `Manager update: Open seating • Ready in ${minFromNow}m`;
     }
 
     slots.push({

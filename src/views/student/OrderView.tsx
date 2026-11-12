@@ -278,9 +278,11 @@ export function OrderView() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label htmlFor="asap" className="text-base font-semibold">
-                As soon as possible
+                As soon as possible (Under 15 min)
               </Label>
-              <p className="text-sm text-muted-foreground">Or set the window when you're free.</p>
+              <p className="text-sm text-muted-foreground">
+                Express pickup guarantee: Ready under 15 minutes.
+              </p>
             </div>
             <Switch
               id="asap"
