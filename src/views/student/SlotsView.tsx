@@ -50,8 +50,8 @@ export function SlotsView() {
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
-  const upiId = (import.meta.env["VITE_UPI_ID"] as string | undefined) || "canteen@upi";
-  const upiName = (import.meta.env["VITE_UPI_NAME"] as string | undefined) || "Smart Canteen";
+  const upiId = (import.meta.env["VITE_UPI_ID"] as string | undefined) || "shabareesh390@okicici";
+  const upiName = (import.meta.env["VITE_UPI_NAME"] as string | undefined) || "Shabareesh";
   const totalAmount = cartTotal(cart);
   const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${totalAmount}&cu=INR&tn=${encodeURIComponent(
     `Order for ${user?.name || "Student"}`,
