@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadBadge } from "@/components/dq/LoadBadge";
+import { OrderQRScannerModal } from "@/components/dq/OrderQRScannerModal";
 import { getHeatmap, getKpis } from "@/services/analyticsService";
 import { cancelOrder, updateOrderStatus } from "@/services/orderService";
 import {
@@ -89,6 +90,7 @@ export function DashboardView() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState("Kitchen overload / student request");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Staff management state
   const [addStaffOpen, setAddStaffOpen] = useState(false);
@@ -410,14 +412,23 @@ export function DashboardView() {
                 ),
               )}
             </div>
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search token # or student name..."
-                value={searchOrder}
-                onChange={(e) => setSearchOrder(e.target.value)}
-                className="h-9 rounded-xl pl-9 text-xs"
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full max-w-xs">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search token # or student name..."
+                  value={searchOrder}
+                  onChange={(e) => setSearchOrder(e.target.value)}
+                  className="h-9 rounded-xl pl-9 text-xs"
+                />
+              </div>
+              <Button
+                size="sm"
+                className="h-9 rounded-xl font-bold gap-1.5 shadow-sm"
+                onClick={() => setScannerOpen(true)}
+              >
+                <QrCode className="size-4" /> Scan QR Handover
+              </Button>
             </div>
           </div>
 
@@ -1065,6 +1076,8 @@ export function DashboardView() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <OrderQRScannerModal open={scannerOpen} onOpenChange={setScannerOpen} />
     </div>
   );
 }

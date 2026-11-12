@@ -17,6 +17,7 @@ import { Route as ManagerIndexRouteImport } from './routes/manager.index'
 import { Route as ManagerDashboardRouteImport } from './routes/manager.dashboard'
 import { Route as ManagerDemandRouteImport } from './routes/manager.demand'
 import { Route as ManagerMenuRouteImport } from './routes/manager.menu'
+import { Route as ManagerScanRouteImport } from './routes/manager.scan'
 import { Route as StudentIndexRouteImport } from './routes/student.index'
 import { Route as StudentHistoryRouteImport } from './routes/student.history'
 import { Route as StudentOrderRouteImport } from './routes/student.order'
@@ -63,6 +64,11 @@ const ManagerMenuRoute = ManagerMenuRouteImport.update({
   path: '/menu',
   getParentRoute: () => ManagerRoute,
 } as any)
+const ManagerScanRoute = ManagerScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => ManagerRoute,
+} as any)
 const StudentIndexRoute = StudentIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/manager/dashboard': typeof ManagerDashboardRoute
   '/manager/demand': typeof ManagerDemandRoute
   '/manager/menu': typeof ManagerMenuRoute
+  '/manager/scan': typeof ManagerScanRoute
   '/student/history': typeof StudentHistoryRoute
   '/student/order': typeof StudentOrderRoute
   '/student/slots': typeof StudentSlotsRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/manager/dashboard': typeof ManagerDashboardRoute
   '/manager/demand': typeof ManagerDemandRoute
   '/manager/menu': typeof ManagerMenuRoute
+  '/manager/scan': typeof ManagerScanRoute
   '/student/history': typeof StudentHistoryRoute
   '/student/order': typeof StudentOrderRoute
   '/student/slots': typeof StudentSlotsRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/manager/dashboard': typeof ManagerDashboardRoute
   '/manager/demand': typeof ManagerDemandRoute
   '/manager/menu': typeof ManagerMenuRoute
+  '/manager/scan': typeof ManagerScanRoute
   '/student/history': typeof StudentHistoryRoute
   '/student/order': typeof StudentOrderRoute
   '/student/slots': typeof StudentSlotsRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/manager/dashboard'
     | '/manager/demand'
     | '/manager/menu'
+    | '/manager/scan'
     | '/student/history'
     | '/student/order'
     | '/student/slots'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/manager/dashboard'
     | '/manager/demand'
     | '/manager/menu'
+    | '/manager/scan'
     | '/student/history'
     | '/student/order'
     | '/student/slots'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/manager/dashboard'
     | '/manager/demand'
     | '/manager/menu'
+    | '/manager/scan'
     | '/student/history'
     | '/student/order'
     | '/student/slots'
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerMenuRouteImport
       parentRoute: typeof ManagerRoute
     }
+    '/manager/scan': {
+      id: '/manager/scan'
+      path: '/scan'
+      fullPath: '/manager/scan'
+      preLoaderRoute: typeof ManagerScanRouteImport
+      parentRoute: typeof ManagerRoute
+    }
     '/student/': {
       id: '/student/'
       path: '/'
@@ -286,6 +305,7 @@ interface ManagerRouteChildren {
   ManagerDashboardRoute: typeof ManagerDashboardRoute
   ManagerDemandRoute: typeof ManagerDemandRoute
   ManagerMenuRoute: typeof ManagerMenuRoute
+  ManagerScanRoute: typeof ManagerScanRoute
   ManagerIndexRoute: typeof ManagerIndexRoute
 }
 
@@ -293,6 +313,7 @@ const ManagerRouteChildren: ManagerRouteChildren = {
   ManagerDashboardRoute: ManagerDashboardRoute,
   ManagerDemandRoute: ManagerDemandRoute,
   ManagerMenuRoute: ManagerMenuRoute,
+  ManagerScanRoute: ManagerScanRoute,
   ManagerIndexRoute: ManagerIndexRoute,
 }
 

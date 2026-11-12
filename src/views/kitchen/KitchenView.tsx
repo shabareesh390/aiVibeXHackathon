@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   ListOrdered,
   Package,
+  QrCode,
   Search,
   Timer,
   Volume2,
@@ -18,6 +19,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { OrderQRScannerModal } from "@/components/dq/OrderQRScannerModal";
 import {
   Dialog,
   DialogContent,
@@ -237,6 +239,7 @@ export function KitchenView() {
   >("all");
   const [cancelDialogOrder, setCancelDialogOrder] = useState<Order | null>(null);
   const [cancelReasonInput, setCancelReasonInput] = useState("Kitchen overload / item unavailable");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const [muted, setMuted] = useState(false);
   const [flash, setFlash] = useState(0);
@@ -379,6 +382,13 @@ export function KitchenView() {
           </Button>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            className="h-16 rounded-2xl px-5 text-base sm:text-lg font-bold gap-2 shadow-md bg-primary text-primary-foreground hover:opacity-95"
+            onClick={() => setScannerOpen(true)}
+          >
+            <QrCode className="size-6!" />
+            Scan QR Handover
+          </Button>
           <Button
             variant="outline"
             className="h-16 rounded-2xl px-6 text-lg font-bold"
@@ -858,6 +868,8 @@ export function KitchenView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <OrderQRScannerModal open={scannerOpen} onOpenChange={setScannerOpen} />
     </div>
   );
 }

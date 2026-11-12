@@ -1,5 +1,5 @@
 import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
-import { BarChart3, LayoutDashboard, RotateCcw, UtensilsCrossed } from "lucide-react";
+import { BarChart3, LayoutDashboard, QrCode, RotateCcw, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/dq/Logo";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/manager")({ component: ManagerLayout });
 
 const NAV = [
   { to: "/manager/dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
+  { to: "/manager/scan" as const, label: "Scan & Handover", icon: QrCode },
   { to: "/manager/menu" as const, label: "Menu", icon: UtensilsCrossed },
   { to: "/manager/demand" as const, label: "Demand", icon: BarChart3 },
 ];
