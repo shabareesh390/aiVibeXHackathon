@@ -21,7 +21,7 @@ export interface AppState extends AppData {
 const STORAGE_KEY = "dequeue.state.v1";
 const CHANNEL = "dequeue-sync";
 
-export const useAppStore = create<AppState>(() => ({
+export const useAppStore = create<AppState>()(() => ({
   ready: false,
   menu: [],
   stations: STATIONS,
@@ -82,7 +82,7 @@ export function initAppStore() {
     if (e.key === STORAGE_KEY && e.newValue && !channel) applyRemote(JSON.parse(e.newValue));
   });
 
-  useAppStore.subscribe((state) => {
+  useAppStore.subscribe((state: AppState) => {
     if (applyingRemote || !state.ready) return;
     const d = pickData(state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(d));

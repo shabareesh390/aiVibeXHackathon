@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { CartItem, MockUser, PickupWindow, UnresolvedItem } from "@/types";
 
-interface SessionState {
+export interface SessionState {
   user: MockUser | null;
   text: string;
   cart: CartItem[];
@@ -14,7 +14,7 @@ interface SessionState {
 
 const KEY = "dequeue.session.v1";
 
-export const useSession = create<SessionState>((set) => ({
+export const useSession = create<SessionState>()((set) => ({
   user: null,
   text: "",
   cart: [],
@@ -36,7 +36,7 @@ export function initSession() {
   } catch {
     /* ignore */
   }
-  useSession.subscribe((s) => {
+  useSession.subscribe((s: SessionState) => {
     const { user, text, cart, unresolved, window: w, lastOrderId } = s;
     sessionStorage.setItem(KEY, JSON.stringify({ text, cart, unresolved, window: w, lastOrderId }));
     if (user) localStorage.setItem("dequeue.user", JSON.stringify(user));
