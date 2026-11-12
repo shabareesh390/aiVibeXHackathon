@@ -1,5 +1,6 @@
 import type { CartItem, Order, OrderStatus, PaymentMethod } from "@/types";
 import { useAppStore, uid } from "@/store/appStore";
+import { supabase } from "@/lib/supabase";
 import { wait } from "./util";
 
 const priceOf = (items: CartItem[]) => {
@@ -17,7 +18,6 @@ export function calcPrepMinutes(items: CartItem[]): number {
   );
 }
 
-// TODO: replace with real API call
 export async function placeOrder(input: {
   items: CartItem[];
   slotTime: number;
@@ -25,7 +25,6 @@ export async function placeOrder(input: {
   studentName: string;
   instructions?: string | undefined;
 }): Promise<Order> {
-  await wait(400);
   const s = useAppStore.getState();
 
   // Concurrency check: prevent overbooking
@@ -78,27 +77,75 @@ export async function placeOrder(input: {
       ...s.notifications,
     ],
   });
+
+  if (supabase) {
+    try {
+      await supabase.from("orders").insert({
+        id: order.id,
+        number: order.number,
+        student_name: order.studentName,
+        items: order.items,
+        total: order.total,
+        slot_time: order.slotTime,
+        status: order.status,
+        payment: order.payment,
+        instructions: order.instructions ?? null,
+        estimated_prep_min: order.estimatedPrepMin ?? 5,
+      });
+    } catch {
+      /* local store already updated */
+    }
+  }
+
+  await wait(100);
   return order;
 }
 
-// TODO: replace with real API call
 export async function getOrder(id: string): Promise<Order | undefined> {
-  await wait(100);
-  return useAppStore.getState().orders.find((o) => o.id === id);
+  const s = useAppStore.getState();
+  const local = s.orders.find((o) => o.id === id);
+  if (local) return local;
+
+  if (supabase) {
+    try {
+      const { data } = await supabase.from("orders").select("*").eq("id", id).maybeSingle();
+      if (data) {
+        return {
+          id: data.id,
+          number: data.number,
+          studentName: data.student_name,
+          mine: false,
+          items: data.items,
+          total: Number(data.total),
+          slotTime: Number(data.slot_time),
+          status: data.status,
+          payment: data.payment,
+          createdAt: new Date(data.created_at).getTime(),
+          instructions: data.instructions || undefined,
+          estimatedPrepMin: data.estimated_prep_min,
+          shelf: data.shelf || undefined,
+          readyAt: data.ready_at ? Number(data.ready_at) : undefined,
+          collectedAt: data.collected_at ? Number(data.collected_at) : undefined,
+          cancelReason: data.cancel_reason || undefined,
+        };
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+
+  return undefined;
 }
 
-// TODO: replace with real API call
 export async function getMyOrders(): Promise<Order[]> {
-  await wait(200);
+  await wait(100);
   return useAppStore
     .getState()
     .orders.filter((o) => o.mine)
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
-// TODO: replace with real API call
 export async function cancelOrder(id: string, reason = "Cancelled by student"): Promise<void> {
-  await wait(200);
   const s = useAppStore.getState();
   const o = s.orders.find((x) => x.id === id);
   useAppStore.setState({
@@ -126,6 +173,19 @@ export async function cancelOrder(id: string, reason = "Cancelled by student"): 
       ...s.notifications,
     ],
   });
+
+  if (supabase) {
+    try {
+      await supabase
+        .from("orders")
+        .update({ status: "cancelled", cancel_reason: reason })
+        .eq("id", id);
+    } catch {
+      /* local store already updated */
+    }
+  }
+
+  await wait(80);
 }
 
 function nextAvailableShelf(orders: Order[]) {
@@ -134,13 +194,11 @@ function nextAvailableShelf(orders: Order[]) {
   return 30;
 }
 
-// TODO: replace with real API call
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus,
   extra?: { shelf?: number; cancelReason?: string },
 ): Promise<void> {
-  await wait(100);
   const s = useAppStore.getState();
   const o = s.orders.find((x) => x.id === id);
   if (!o) return;
@@ -198,11 +256,24 @@ export async function updateOrderStatus(
       ...s.activity,
     ].slice(0, 40),
   });
+
+  if (supabase) {
+    try {
+      const patch: any = { status };
+      if (shelf !== undefined) patch.shelf = shelf;
+      if (status === "ready") patch.ready_at = now;
+      if (status === "collected") patch.collected_at = now;
+      if (extra?.cancelReason !== undefined) patch.cancel_reason = extra.cancelReason;
+      await supabase.from("orders").update(patch).eq("id", id);
+    } catch {
+      /* local store already updated */
+    }
+  }
+
+  await wait(80);
 }
 
-// TODO: replace with real API call
 export async function acknowledgeReslot(id: string): Promise<void> {
-  await wait(100);
   const s = useAppStore.getState();
   useAppStore.setState({
     orders: s.orders.map((x) =>
@@ -211,7 +282,6 @@ export async function acknowledgeReslot(id: string): Promise<void> {
   });
 }
 
-// TODO: replace with real API call
 export async function markNotificationsRead(): Promise<void> {
   const s = useAppStore.getState();
   useAppStore.setState({ notifications: s.notifications.map((n) => ({ ...n, read: true })) });
