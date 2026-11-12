@@ -12,6 +12,7 @@ import {
   QrCode,
   Smartphone,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
@@ -118,7 +119,7 @@ export function SlotsView() {
 
   return (
     <div className="space-y-6">
-      <section>
+      <section className="space-y-2.5">
         <h1 className="font-display text-2xl font-bold md:text-3xl">
           Available Seats & Free Slots
         </h1>
@@ -128,6 +129,10 @@ export function SlotsView() {
             <span className="font-medium text-foreground">Total {inr(cartTotal(cart))}.</span>
           )}
         </p>
+        <div className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3.5 py-2 text-xs font-semibold text-primary">
+          <Zap className="size-4 shrink-0 text-primary" />
+          <span>⚡ Under 15-Minute Pickup Guarantee: All food items are prepared fresh and ready in under 15 minutes!</span>
+        </div>
       </section>
 
       <section
@@ -145,52 +150,60 @@ export function SlotsView() {
             />
           </div>
         ) : (
-          recommended.map((s, i) => (
-            <button
-              key={s.startTime}
-              type="button"
-              onClick={() => {
-                setChosen(s);
-                setStep("pay");
-              }}
-              className={cn(
-                "flex flex-col justify-between rounded-2xl border-2 bg-card p-5 text-left shadow-soft transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-ring",
-                i === 0 ? "border-primary" : "border-transparent",
-              )}
-            >
-              <div>
-                <div className="flex items-start justify-between">
-                  <div>
-                    {i === 0 && (
-                      <p className="mb-1 text-xs font-bold uppercase tracking-wider text-primary">
-                        Best pick
+          recommended.map((s, i) => {
+            const minAway = Math.max(1, Math.round((s.startTime - Date.now()) / 60000));
+            return (
+              <button
+                key={s.startTime}
+                type="button"
+                onClick={() => {
+                  setChosen(s);
+                  setStep("pay");
+                }}
+                className={cn(
+                  "flex flex-col justify-between rounded-2xl border-2 bg-card p-5 text-left shadow-soft transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-ring",
+                  i === 0 ? "border-primary" : "border-transparent",
+                )}
+              >
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="mb-1 flex items-center gap-1.5">
+                        {i === 0 && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                            Best pick •
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary">
+                          <Zap className="size-3" /> Ready in ~{minAway} min
+                        </span>
+                      </div>
+                      <p className="font-display text-4xl font-extrabold tabular">
+                        {fmtTime(s.startTime)}
                       </p>
-                    )}
-                    <p className="font-display text-4xl font-extrabold tabular">
-                      {fmtTime(s.startTime)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Ready by {fmtTimeAmPm(s.readyBy)}
-                    </p>
+                      <p className="text-xs text-muted-foreground">
+                        Ready by {fmtTimeAmPm(s.readyBy)} (Under 15m)
+                      </p>
+                    </div>
+                    <LoadBadge load={s.load} />
                   </div>
-                  <LoadBadge load={s.load} />
+                  <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold">
+                    <Armchair className="size-4 text-primary" />
+                    <span
+                      className={cn(
+                        s.capacityLeft > 0 ? "text-foreground" : "text-destructive font-bold",
+                      )}
+                    >
+                      {s.capacityLeft > 0
+                        ? `${s.capacityLeft} seats / spots free`
+                        : "0 seats free (Full)"}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold">
-                  <Armchair className="size-4 text-primary" />
-                  <span
-                    className={cn(
-                      s.capacityLeft > 0 ? "text-foreground" : "text-destructive font-bold",
-                    )}
-                  >
-                    {s.capacityLeft > 0
-                      ? `${s.capacityLeft} seats / spots free`
-                      : "0 seats free (Full)"}
-                  </span>
-                </div>
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">{s.reason}</p>
-            </button>
-          ))
+                <p className="mt-4 text-sm text-muted-foreground">{s.reason}</p>
+              </button>
+            );
+          })
         )}
       </section>
 
@@ -203,28 +216,32 @@ export function SlotsView() {
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3">
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-              {slots.map((s) => (
-                <button
-                  key={s.startTime}
-                  type="button"
-                  disabled={s.load === "red"}
-                  onClick={() => {
-                    setChosen(s);
-                    setStep("pay");
-                  }}
-                  aria-label={`${fmtTimeAmPm(s.startTime)}, ${s.capacityLeft} seats free, ${s.reason}`}
-                  className={cn(
-                    "rounded-xl border-2 py-2 px-1 text-center tabular transition focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:line-through",
-                    loadClasses[s.load].soft,
-                    loadClasses[s.load].border,
-                  )}
-                >
-                  <span className="block text-sm font-semibold">{fmtTime(s.startTime)}</span>
-                  <span className="block text-[11px] font-medium opacity-85">
-                    {s.capacityLeft > 0 ? `${s.capacityLeft} seats` : "Full"}
-                  </span>
-                </button>
-              ))}
+              {slots.map((s) => {
+                const minAway = Math.max(1, Math.round((s.startTime - Date.now()) / 60000));
+                return (
+                  <button
+                    key={s.startTime}
+                    type="button"
+                    disabled={s.load === "red"}
+                    onClick={() => {
+                      setChosen(s);
+                      setStep("pay");
+                    }}
+                    aria-label={`${fmtTimeAmPm(s.startTime)}, in ${minAway} min, ${s.capacityLeft} seats free, ${s.reason}`}
+                    className={cn(
+                      "rounded-xl border-2 py-2 px-1 text-center tabular transition focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:line-through",
+                      loadClasses[s.load].soft,
+                      loadClasses[s.load].border,
+                    )}
+                  >
+                    <span className="block text-sm font-semibold">{fmtTime(s.startTime)}</span>
+                    <span className="block text-[10px] font-bold text-primary">In {minAway}m</span>
+                    <span className="block text-[11px] font-medium opacity-85">
+                      {s.capacityLeft > 0 ? `${s.capacityLeft} seats` : "Full"}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-3 flex justify-center gap-3 text-xs text-muted-foreground">
               <LoadBadge load="green" />
@@ -345,7 +362,7 @@ export function SlotsView() {
                   )}
                 </DialogTitle>
                 <DialogDescription>
-                  Confirm your slot and table seating. Pay now or at pickup.
+                  Ready in ~{chosen && Math.max(1, Math.round((chosen.startTime - Date.now()) / 60000))} mins (Under 15-minute guarantee). Confirm your slot and table seating.
                 </DialogDescription>
               </DialogHeader>
               <p className="text-center font-display text-3xl font-bold tabular">

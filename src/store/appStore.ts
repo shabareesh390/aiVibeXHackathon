@@ -12,7 +12,7 @@ import { SEED_MENU, STATIONS } from "@/mock/menu";
 import { makeSeed } from "@/mock/seed";
 
 export const DEFAULT_CONFIG: CanteenConfig = {
-  slotIntervalMin: 15,
+  slotIntervalMin: 5,
   maxOrdersPerSlot: 15,
   openingHour: 8,
   closingHour: 21,
@@ -109,6 +109,10 @@ export function initAppStore() {
           config: {
             ...DEFAULT_CONFIG,
             ...resolvedConfig,
+            slotIntervalMin:
+              resolvedConfig.slotIntervalMin && resolvedConfig.slotIntervalMin <= 5
+                ? resolvedConfig.slotIntervalMin
+                : DEFAULT_CONFIG.slotIntervalMin,
             upiId:
               !resolvedConfig.upiId || resolvedConfig.upiId === "canteen@upi"
                 ? DEFAULT_CONFIG.upiId

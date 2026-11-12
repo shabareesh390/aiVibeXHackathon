@@ -125,6 +125,7 @@ export function TrackView({ orderId }: { orderId: string }) {
           <span className="font-display text-2xl font-bold text-foreground tabular">
             {fmtTimeAmPm(order.slotTime)}
           </span>
+          <p className="text-[11px] font-semibold text-primary">⚡ Under 15m guarantee</p>
         </div>
       </section>
 
@@ -247,12 +248,14 @@ export function TrackView({ orderId }: { orderId: string }) {
                     ? "Kitchen is actively cooking your items right now."
                     : "We'll sequence preparation so it's fresh and hot when you arrive."}
                 </p>
-                <div className="mt-4 flex items-center justify-center gap-4 text-xs opacity-90">
+                <div className="mt-4 flex items-center justify-center gap-3 text-xs opacity-90">
                   <span className="flex items-center gap-1">
                     <Timer className="size-3.5" /> Prep: ~{order.estimatedPrepMin ?? 5} min
                   </span>
                   <span>·</span>
                   <span>Slot: {fmtTimeAmPm(order.slotTime)}</span>
+                  <span>·</span>
+                  <span className="font-semibold text-emerald-300">⚡ Ready under 15m</span>
                 </div>
               </section>
             ) : (
