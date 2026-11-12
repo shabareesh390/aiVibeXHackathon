@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { initAppStore, useAppStore } from "@/store/appStore";
+import { initAppStore, useAppStore, type AppState } from "@/store/appStore";
 import { initSession } from "@/store/sessionStore";
 
 export function useNow(intervalMs = 1000) {
@@ -17,5 +17,5 @@ export function useAppReady() {
     initAppStore();
     initSession();
   }, []);
-  return useAppStore((s) => s.ready);
+  return useAppStore((s: AppState) => s.ready);
 }

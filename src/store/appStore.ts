@@ -14,7 +14,7 @@ export interface AppData {
   seededAt: number;
 }
 
-interface AppState extends AppData {
+export interface AppState extends AppData {
   ready: boolean;
 }
 
