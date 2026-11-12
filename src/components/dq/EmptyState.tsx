@@ -6,10 +6,10 @@ export function EmptyState({
   body,
   action,
 }: {
-  icon?: ReactNode;
+  icon?: ReactNode | undefined;
   title: string;
-  body?: string;
-  action?: ReactNode;
+  body?: string | undefined;
+  action?: ReactNode | undefined;
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-card/50 px-6 py-12 text-center">

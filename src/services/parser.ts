@@ -57,8 +57,23 @@ const FILLER = new Set([
   "ready",
   "by",
   "at",
-  "and",
   "the",
+  "have",
+  "can",
+  "item",
+  "items",
+  "dish",
+  "dishes",
+  "plate",
+  "plates",
+  "glass",
+  "glasses",
+  "cup",
+  "cups",
+  "under",
+  "below",
+  "rs",
+  "inr",
 ]);
 const MODIFIERS = [
   "no sugar",
@@ -142,6 +157,15 @@ export function parseOrderText(text: string, menu: MenuItem[], now = Date.now())
   const notFound: string[] = [];
 
   for (let seg of segments) {
+    let maxBudget: number | undefined;
+    const budgetMatch = seg.match(
+      /(?:under|below|less than|within|max)\s*(?:rs\.?|inr|₹)?\s*(\d+)/i,
+    );
+    if (budgetMatch) {
+      maxBudget = Number(budgetMatch[1]);
+      seg = seg.replace(budgetMatch[0], " ");
+    }
+
     const modifiers: string[] = [];
     for (const [alias, mod] of Object.entries(MOD_ALIASES))
       if (seg.includes(alias)) {
@@ -164,9 +188,14 @@ export function parseOrderText(text: string, menu: MenuItem[], now = Date.now())
     if (!words.length) continue;
     const phrase = words.join(" ");
 
+    const pool =
+      maxBudget !== undefined
+        ? available.filter((m) => m.price <= maxBudget || m.price * qty <= maxBudget)
+        : available;
+
     // Score items: full alias match beats partial
     let best: { item: MenuItem; score: number }[] = [];
-    for (const m of available) {
+    for (const m of pool.length ? pool : available) {
       let score = 0;
       for (const alias of m.aliases) {
         const aw = alias.split(" ");
@@ -180,7 +209,7 @@ export function parseOrderText(text: string, menu: MenuItem[], now = Date.now())
     const top = best[0]?.score ?? 0;
     best = best.filter((b) => b.score === top);
 
-    // Family word alone ("dosa", "coffee") → ask which one
+    // Family word alone ("dosa", "coffee", "sandwich", "juice") → ask which one
     const familyWord = words.find((w) => available.some((m) => m.family && close(w, m.family)));
     const family = familyWord
       ? available.find((m) => m.family && close(familyWord, m.family))?.family
@@ -204,14 +233,26 @@ export function parseOrderText(text: string, menu: MenuItem[], now = Date.now())
           a.split(" ").every((aw) => words.some((w) => close(w, aw))),
         ))
     ) {
-      const options = available.filter((m) => m.family === family).map((m) => m.id);
+      const activePool = pool.length ? pool : available;
+      const options = activePool.filter((m) => m.family === family).map((m) => m.id);
+      if (options.length === 1 && options[0]) {
+        const id = options[0];
+        const existing = items.find(
+          (i) => i.itemId === id && i.modifiers.join() === modifiers.join(),
+        );
+        if (existing) existing.qty += qty;
+        else items.push({ itemId: id, qty, modifiers });
+        continue;
+      }
       unresolved.push({
         id: `${family}-${unresolved.length}`,
         phrase,
         qty,
         modifiers,
-        question: `Which ${family}?`,
-        options,
+        question: maxBudget ? `Which ${family} (under ₹${maxBudget})?` : `Which ${family}?`,
+        options: options.length
+          ? options
+          : available.filter((m) => m.family === family).map((m) => m.id),
       });
       continue;
     }

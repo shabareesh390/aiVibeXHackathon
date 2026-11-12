@@ -25,8 +25,12 @@ export interface MenuItem {
   /** Words people actually type or say, including Hinglish. */
   aliases: string[];
   /** Generic family word, used to ask "Which dosa?" */
-  family?: string;
+  family?: string | undefined;
   modifiers: string[];
+  description?: string | undefined;
+  imageUrl?: string | undefined;
+  inStock?: boolean | undefined;
+  stockCount?: number | undefined;
 }
 
 export interface CartItem {
@@ -49,13 +53,13 @@ export interface ParseResult {
   unresolved: UnresolvedItem[];
   notFound: string[];
   /** Latest pickup time mentioned in the text, epoch ms. */
-  readyBy?: number;
+  readyBy?: number | undefined;
 }
 
 export interface PickupWindow {
   asap: boolean;
-  start?: number;
-  end?: number;
+  start?: number | undefined;
+  end?: number | undefined;
 }
 
 export interface Slot {
@@ -64,7 +68,7 @@ export interface Slot {
   load: Load;
   reason: string;
   capacityLeft: number;
-  recommended?: boolean;
+  recommended?: boolean | undefined;
 }
 
 export type OrderStatus = "placed" | "scheduled" | "cooking" | "ready" | "collected" | "cancelled";
@@ -88,10 +92,13 @@ export interface Order {
   status: OrderStatus;
   payment: PaymentMethod;
   createdAt: number;
-  readyAt?: number;
-  collectedAt?: number;
-  shelf?: number;
-  reslot?: ReslotNotice;
+  readyAt?: number | undefined;
+  collectedAt?: number | undefined;
+  shelf?: number | undefined;
+  reslot?: ReslotNotice | undefined;
+  cancelReason?: string | undefined;
+  instructions?: string | undefined;
+  estimatedPrepMin?: number | undefined;
 }
 
 export type BatchState = "upcoming" | "start-now" | "overdue" | "cooking" | "done";
@@ -110,7 +117,7 @@ export interface Batch {
 
 export interface AppNotification {
   id: string;
-  orderId?: string;
+  orderId?: string | undefined;
   title: string;
   body: string;
   at: number;
@@ -171,4 +178,21 @@ export interface SimulationPoint {
 export interface MockUser {
   name: string;
   role: Role;
+}
+
+export interface CanteenConfig {
+  slotIntervalMin: number;
+  maxOrdersPerSlot: number;
+  openingHour: number;
+  closingHour: number;
+  walkInReserve: number;
+  blockedSlots: number[];
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: "head_chef" | "station_cook" | "packer";
+  station?: StationId | undefined;
+  active: boolean;
 }

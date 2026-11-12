@@ -19,9 +19,13 @@ export function prepMinutes(cart: CartItem[]) {
  * TODO: replace with real API call
  */
 export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<Slot[]> {
-  await wait(500);
-  const { menu, stations, orders } = useAppStore.getState();
+  await wait(300);
+  const { menu, stations, orders, config } = useAppStore.getState();
   const now = Date.now();
+  const stepMs = (config?.slotIntervalMin ?? 5) * MIN;
+  const maxOrders = config?.maxOrdersPerSlot ?? 15;
+  const blocked = new Set(config?.blockedSlots ?? []);
+
   const need = stationDemand(cart, menu);
   const booked = bookedBySlot(orders, menu);
   const earliest = ceilToSlot(now + prepMinutes(cart) * MIN);
@@ -29,8 +33,16 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
   const end = window.asap ? earliest + 90 * MIN : Math.max(start, window.end ?? start + 60 * MIN);
 
   const slots: Slot[] = [];
-  for (let t = start; t <= end; t += SLOT_MS) {
-    let worst = { station: "packing" as StationId, ratio: 0, left: Infinity };
+  for (let t = start; t <= end; t += stepMs) {
+    if (blocked.has(t)) continue;
+
+    const ordersInSlot = orders.filter((o) => o.status !== "cancelled" && o.slotTime === t).length;
+    let worst = {
+      station: "packing" as StationId,
+      ratio: ordersInSlot / maxOrders,
+      left: maxOrders - ordersInSlot,
+    };
+
     for (const s of stations) {
       if (need[s.id] === 0) continue;
       const used = booked.get(t)?.[s.id] ?? 0;
@@ -39,20 +51,29 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
       const left = Math.max(0, Math.floor((cap - used) / need[s.id]));
       if (ratio > worst.ratio) worst = { station: s.id, ratio, left };
     }
-    const load = ratioToLoad(worst.ratio > 1 ? 1 : worst.ratio === 1 ? 0.99 : worst.ratio);
-    const full = worst.ratio > 1;
+
+    const isSlotCapped = ordersInSlot >= maxOrders;
+    const isStationFull = worst.ratio > 1;
+    const full = isSlotCapped || isStationFull;
+    const load = isSlotCapped
+      ? "red"
+      : ratioToLoad(worst.ratio > 1 ? 1 : worst.ratio === 1 ? 0.99 : worst.ratio);
     const stationName = stations.find((s) => s.id === worst.station)?.name.toLowerCase();
-    const reason = full
-      ? `Full: ${stationName} station is booked out`
-      : load === "amber"
-        ? `Busy: ${stationName} station is nearly full`
-        : `Quiet: ready within 2 min of arrival`;
+
+    const reason = isSlotCapped
+      ? `Full: Max order capacity reached (${ordersInSlot}/${maxOrders})`
+      : full
+        ? `Full: ${stationName} station is booked out`
+        : load === "amber"
+          ? `Busy: ${ordersInSlot} orders booked (${Math.round(worst.ratio * 100)}% station load)`
+          : `Quiet: ${ordersInSlot} orders booked, ready on time`;
+
     slots.push({
       startTime: t,
       readyBy: t - MIN,
       load: full ? "red" : load,
       reason,
-      capacityLeft: full ? 0 : worst.left,
+      capacityLeft: full ? 0 : Math.max(0, worst.left),
     });
   }
 

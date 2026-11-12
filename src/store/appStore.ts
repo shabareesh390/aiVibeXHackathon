@@ -1,7 +1,31 @@
 import { create } from "zustand";
-import type { ActivityEvent, AppNotification, MenuItem, Order, Station } from "@/types";
+import type {
+  ActivityEvent,
+  AppNotification,
+  CanteenConfig,
+  MenuItem,
+  Order,
+  StaffMember,
+  Station,
+} from "@/types";
 import { SEED_MENU, STATIONS } from "@/mock/menu";
 import { makeSeed } from "@/mock/seed";
+
+export const DEFAULT_CONFIG: CanteenConfig = {
+  slotIntervalMin: 15,
+  maxOrdersPerSlot: 15,
+  openingHour: 8,
+  closingHour: 21,
+  walkInReserve: 0.2,
+  blockedSlots: [],
+};
+
+export const DEFAULT_STAFF: StaffMember[] = [
+  { id: "staff-1", name: "Ramesh Kumar", role: "head_chef", station: "tawa", active: true },
+  { id: "staff-2", name: "Suresh Patil", role: "station_cook", station: "fryer", active: true },
+  { id: "staff-3", name: "Meena Devi", role: "station_cook", station: "beverage", active: true },
+  { id: "staff-4", name: "Anand Verma", role: "packer", station: "packing", active: true },
+];
 
 export interface AppData {
   menu: MenuItem[];
@@ -12,6 +36,8 @@ export interface AppData {
   activity: ActivityEvent[];
   nextNumber: number;
   seededAt: number;
+  config: CanteenConfig;
+  staff: StaffMember[];
 }
 
 export interface AppState extends AppData {
@@ -31,12 +57,22 @@ export const useAppStore = create<AppState>()(() => ({
   activity: [],
   nextNumber: 100,
   seededAt: 0,
+  config: DEFAULT_CONFIG,
+  staff: DEFAULT_STAFF,
 }));
 
 function freshData(): AppData {
   const now = Date.now();
   const seed = makeSeed(now);
-  return { menu: SEED_MENU, stations: STATIONS, batchProgress: {}, seededAt: now, ...seed };
+  return {
+    menu: SEED_MENU,
+    stations: STATIONS,
+    batchProgress: {},
+    seededAt: now,
+    config: DEFAULT_CONFIG,
+    staff: DEFAULT_STAFF,
+    ...seed,
+  };
 }
 
 const pickData = (s: AppState): AppData => ({
@@ -48,6 +84,8 @@ const pickData = (s: AppState): AppData => ({
   activity: s.activity,
   nextNumber: s.nextNumber,
   seededAt: s.seededAt,
+  config: s.config ?? DEFAULT_CONFIG,
+  staff: s.staff ?? DEFAULT_STAFF,
 });
 
 let started = false;
@@ -62,7 +100,13 @@ export function initAppStore() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as AppData;
-      if (Date.now() - parsed.seededAt < 3 * 60 * 60_000) data = parsed;
+      if (Date.now() - parsed.seededAt < 3 * 60 * 60_000) {
+        data = {
+          ...parsed,
+          config: parsed.config ?? DEFAULT_CONFIG,
+          staff: parsed.staff ?? DEFAULT_STAFF,
+        };
+      }
     }
   } catch {
     data = null;

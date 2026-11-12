@@ -40,6 +40,7 @@ export function SlotsView() {
   const [chosen, setChosen] = useState<Slot | null>(null);
   const [step, setStep] = useState<"pay" | "processing" | "done">("pay");
   const [placed, setPlaced] = useState<Order | null>(null);
+  const [instructions, setInstructions] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,16 +67,22 @@ export function SlotsView() {
   const pay = async (method: PaymentMethod) => {
     if (!chosen) return;
     setStep("processing");
-    const order = await placeOrder({
-      items: cart,
-      slotTime: chosen.startTime,
-      payment: method,
-      studentName: user?.name ?? "Student",
-    });
-    setPlaced(order);
-    setStep("done");
-    set({ cart: [], text: "", unresolved: [], lastOrderId: order.id, window: { asap: true } });
-    toast.success(`Order #${order.number} confirmed`);
+    try {
+      const order = await placeOrder({
+        items: cart,
+        slotTime: chosen.startTime,
+        payment: method,
+        studentName: user?.name ?? "Student",
+        instructions: instructions.trim() || undefined,
+      });
+      setPlaced(order);
+      setStep("done");
+      set({ cart: [], text: "", unresolved: [], lastOrderId: order.id, window: { asap: true } });
+      toast.success(`Order #${order.number} confirmed`);
+    } catch (err: any) {
+      setStep("pay");
+      toast.error(err?.message || "Failed to book slot. Please try another slot.");
+    }
   };
 
   const recommended = slots?.filter((s) => s.recommended) ?? [];
@@ -203,6 +210,22 @@ export function SlotsView() {
               <p className="text-center font-display text-3xl font-bold tabular">
                 {inr(cartTotal(cart))}
               </p>
+              <div className="space-y-1.5 text-left">
+                <label
+                  htmlFor="instructions"
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Special instructions (optional)
+                </label>
+                <input
+                  id="instructions"
+                  type="text"
+                  placeholder="e.g. Less spicy, pack sambar separately"
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
               <div className="grid gap-3">
                 <Button
                   className="h-14 rounded-2xl text-base"
