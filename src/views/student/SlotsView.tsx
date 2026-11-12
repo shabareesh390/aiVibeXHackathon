@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 export function SlotsView() {
   const ready = useAppStore((s) => s.ready);
   const orders = useAppStore((s) => s.orders);
+  const config = useAppStore((s) => s.config);
   const { cart, window: win, user, set } = useSession();
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [chosen, setChosen] = useState<Slot | null>(null);
@@ -52,8 +53,12 @@ export function SlotsView() {
 
   const envUpi = import.meta.env["VITE_UPI_ID"] as string | undefined;
   const envName = import.meta.env["VITE_UPI_NAME"] as string | undefined;
-  const upiId = envUpi && envUpi !== "canteen@upi" ? envUpi : "shabareesh390@okicici";
-  const upiName = envName && envName !== "Smart Canteen" ? envName : "Shabareesh";
+  const upiId =
+    (config?.upiId && config.upiId !== "canteen@upi" ? config.upiId : null) ??
+    (envUpi && envUpi !== "canteen@upi" ? envUpi : "shabareesh390@okicici");
+  const upiName =
+    (config?.upiName && config.upiName !== "Smart Canteen" ? config.upiName : null) ??
+    (envName && envName !== "Smart Canteen" ? envName : "Shabareesh");
   const totalAmount = cartTotal(cart);
   const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${totalAmount}&cu=INR&tn=${encodeURIComponent(
     `Order for ${user?.name || "Student"}`,

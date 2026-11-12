@@ -37,10 +37,14 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
     if (blocked.has(t)) continue;
 
     const ordersInSlot = orders.filter((o) => o.status !== "cancelled" && o.slotTime === t).length;
+    const manualSeats = config?.manualOccupiedSeats?.[t] ?? 0;
+    const totalOccupiedSeats = ordersInSlot + manualSeats;
+    const override = config?.slotOverrides?.[t];
+
     let worst = {
       station: "packing" as StationId,
-      ratio: ordersInSlot / maxOrders,
-      left: maxOrders - ordersInSlot,
+      ratio: totalOccupiedSeats / maxOrders,
+      left: Math.max(0, maxOrders - totalOccupiedSeats),
     };
 
     for (const s of stations) {
@@ -49,31 +53,48 @@ export async function getSlots(cart: CartItem[], window: PickupWindow): Promise<
       const cap = usableCapacity(s);
       const ratio = (used + need[s.id]) / cap;
       const left = Math.max(0, Math.floor((cap - used) / need[s.id]));
-      if (ratio > worst.ratio) worst = { station: s.id, ratio, left };
+      if (ratio > worst.ratio) worst = { station: s.id, ratio, left: Math.min(worst.left, left) };
     }
 
-    const isSlotCapped = ordersInSlot >= maxOrders;
+    const isSlotCapped = totalOccupiedSeats >= maxOrders;
     const isStationFull = worst.ratio > 1;
     const full = isSlotCapped || isStationFull;
-    const load = isSlotCapped
+    let load = isSlotCapped
       ? "red"
       : ratioToLoad(worst.ratio > 1 ? 1 : worst.ratio === 1 ? 0.99 : worst.ratio);
     const stationName = stations.find((s) => s.id === worst.station)?.name.toLowerCase();
 
-    const reason = isSlotCapped
-      ? `Full: Max order capacity reached (${ordersInSlot}/${maxOrders})`
+    let reason = isSlotCapped
+      ? `Full: All ${maxOrders} seats occupied (${totalOccupiedSeats}/${maxOrders})`
       : full
         ? `Full: ${stationName} station is booked out`
         : load === "amber"
-          ? `Busy: ${ordersInSlot} orders booked (${Math.round(worst.ratio * 100)}% station load)`
-          : `Quiet: ${ordersInSlot} orders booked, ready on time`;
+          ? `Busy: ${totalOccupiedSeats}/${maxOrders} seats filled (${Math.round(worst.ratio * 100)}% load)`
+          : `Available: ${worst.left} seats free, ready on time`;
+
+    let finalCapacity = full ? 0 : Math.max(0, worst.left);
+
+    // Apply Manager Manual Overrides if set
+    if (override === "filled") {
+      load = "red";
+      finalCapacity = 0;
+      reason = "Manager update: Slot & seats marked Filled (No free tables)";
+    } else if (override === "busy") {
+      load = "amber";
+      finalCapacity = Math.min(finalCapacity, 3);
+      reason = "Manager update: Marked Busy (Limited seating available)";
+    } else if (override === "free") {
+      load = "green";
+      finalCapacity = Math.max(finalCapacity, 6);
+      reason = "Manager update: Marked Free / Open seating";
+    }
 
     slots.push({
       startTime: t,
       readyBy: t - MIN,
-      load: full ? "red" : load,
+      load,
       reason,
-      capacityLeft: full ? 0 : Math.max(0, worst.left),
+      capacityLeft: finalCapacity,
     });
   }
 

@@ -1,12 +1,15 @@
 import {
   Activity,
+  Armchair,
   Calendar,
   CheckCircle2,
   Clock,
   Eye,
   Flame,
   Gauge,
+  Minus,
   Plus,
+  QrCode,
   Repeat,
   Search,
   Settings,
@@ -54,7 +57,9 @@ import { getHeatmap, getKpis } from "@/services/analyticsService";
 import { cancelOrder, updateOrderStatus } from "@/services/orderService";
 import {
   addStaff,
+  adjustManualSeats,
   deleteStaff,
+  setSlotSeatStatus,
   toggleBlockSlot,
   updateCanteenConfig,
   updateStaff,
@@ -103,6 +108,13 @@ export function DashboardView() {
   const [walkInReserve, setWalkInReserve] = useState(
     Math.round((config?.walkInReserve ?? 0.2) * 100),
   );
+  const [upiId, setUpiId] = useState(config?.upiId ?? "shabareesh390@okicici");
+  const [upiName, setUpiName] = useState(config?.upiName ?? "Shabareesh");
+
+  useEffect(() => {
+    if (config?.upiId) setUpiId(config.upiId);
+    if (config?.upiName) setUpiName(config.upiName);
+  }, [config?.upiId, config?.upiName]);
 
   useEffect(() => {
     if (!ready) return;
@@ -156,6 +168,18 @@ export function DashboardView() {
       walkInReserve: Number(walkInReserve) / 100,
     });
     toast.success("Pickup slot settings updated");
+  };
+
+  const handleSaveUpiConfig = async () => {
+    if (!upiId.trim() || !upiId.includes("@")) {
+      toast.error("Please enter a valid UPI ID (e.g. name@okhdfcbank or 9876543210@paytm)");
+      return;
+    }
+    await updateCanteenConfig({
+      upiId: upiId.trim(),
+      upiName: upiName.trim() || "Shabareesh",
+    });
+    toast.success("UPI payment settings saved successfully");
   };
 
   const handleAddStaffSubmit = async (e: React.FormEvent) => {
@@ -220,7 +244,7 @@ export function DashboardView() {
             Orders ({orders.length})
           </TabsTrigger>
           <TabsTrigger value="slots" className="rounded-xl font-bold text-sm">
-            Pickup Slots
+            Seats & Slots
           </TabsTrigger>
           <TabsTrigger value="staff" className="rounded-xl font-bold text-sm">
             Kitchen Staff ({staff.length})
@@ -477,7 +501,7 @@ export function DashboardView() {
 
         {/* 3. PICKUP SLOT SETTINGS */}
         <TabsContent value="slots" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-4 rounded-2xl border bg-card p-5 shadow-soft">
               <h2 className="font-display text-xl font-semibold">Slot Capacity & Intervals</h2>
               <div className="space-y-4">
@@ -568,6 +592,233 @@ export function DashboardView() {
                   Blocked slots are excluded from recommendation and cannot be booked by students.
                 </p>
               </div>
+            </div>
+
+            <div className="space-y-4 rounded-2xl border bg-card p-5 shadow-soft">
+              <div className="flex items-center gap-2">
+                <QrCode className="size-5 text-primary" />
+                <h2 className="font-display text-xl font-semibold">UPI & QR Payment</h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Set your official UPI ID and Payee name for real-time QR code generation at checkout.
+              </p>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>UPI VPA Address</Label>
+                  <Input
+                    type="text"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="e.g. shabareesh390@okicici"
+                    className="font-mono rounded-xl"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Payments will be credited directly to this UPI address.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Payee Business / Name</Label>
+                  <Input
+                    type="text"
+                    value={upiName}
+                    onChange={(e) => setUpiName(e.target.value)}
+                    placeholder="e.g. Shabareesh"
+                    className="rounded-xl"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Display name shown in GPay, PhonePe, Paytm apps.
+                  </p>
+                </div>
+
+                <Button className="w-full rounded-xl font-bold" onClick={handleSaveUpiConfig}>
+                  Save UPI Payment Settings
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Seat Occupancy & Slot Controller */}
+          <div className="space-y-4 rounded-2xl border bg-card p-5 shadow-soft">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
+                  <Armchair className="size-5 text-primary" /> Live Seat Occupancy & Capacity Status
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Mark which slots and tables are Free, Busy, or Filled. Add offline walk-in seats to
+                  balance kitchen rush.
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-28">Slot Time</TableHead>
+                    <TableHead className="w-64">Seat Occupancy</TableHead>
+                    <TableHead className="w-28 text-center">Free Seats</TableHead>
+                    <TableHead className="w-32 text-center">Status</TableHead>
+                    <TableHead className="w-44">Manager Override</TableHead>
+                    <TableHead className="w-40 text-center">Walk-In Seats</TableHead>
+                    <TableHead className="text-right">Block</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {heat?.slots.map((s) => {
+                    const slotOrders = orders.filter(
+                      (o) => o.status !== "cancelled" && o.slotTime === s,
+                    );
+                    const ordersCount = slotOrders.length;
+                    const manualCount = config?.manualOccupiedSeats?.[s] ?? 0;
+                    const totalOccupied = ordersCount + manualCount;
+                    const maxCap = config?.maxOrdersPerSlot ?? 15;
+                    const freeSeats = Math.max(0, maxCap - totalOccupied);
+                    const isBlocked = config?.blockedSlots?.includes(s);
+                    const override = config?.slotOverrides?.[s] ?? "auto";
+
+                    let statusBadge: "free" | "busy" | "filled" | "blocked" = "free";
+                    if (isBlocked) statusBadge = "blocked";
+                    else if (override === "filled") statusBadge = "filled";
+                    else if (override === "busy") statusBadge = "busy";
+                    else if (override === "free") statusBadge = "free";
+                    else if (totalOccupied >= maxCap) statusBadge = "filled";
+                    else if (totalOccupied >= maxCap * 0.7) statusBadge = "busy";
+                    else statusBadge = "free";
+
+                    const pct = Math.min(100, Math.round((totalOccupied / maxCap) * 100));
+
+                    return (
+                      <TableRow key={s}>
+                        <TableCell className="font-bold tabular text-sm">
+                          {fmtTimeAmPm(s)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-semibold tabular">
+                              <span>
+                                {totalOccupied} / {maxCap} seats filled
+                              </span>
+                              <span className="text-muted-foreground font-normal">
+                                ({ordersCount} orders + {manualCount} walk-in)
+                              </span>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={cn(
+                                  "h-full transition-all duration-300",
+                                  pct >= 90
+                                    ? "bg-destructive"
+                                    : pct >= 65
+                                      ? "bg-amber-500"
+                                      : "bg-load-free",
+                                )}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center font-bold tabular text-sm">
+                          {statusBadge === "blocked" || statusBadge === "filled" ? (
+                            <span className="text-destructive">0 free</span>
+                          ) : (
+                            <span className={freeSeats <= 3 ? "text-amber-500" : "text-load-free"}>
+                              {freeSeats} free
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {statusBadge === "blocked" ? (
+                            <span className="rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-bold text-destructive">
+                              Blocked
+                            </span>
+                          ) : statusBadge === "filled" ? (
+                            <span className="rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-bold text-destructive">
+                              Filled
+                            </span>
+                          ) : statusBadge === "busy" ? (
+                            <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                              Busy
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-load-free-soft px-2.5 py-1 text-xs font-bold text-load-free">
+                              Free
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={override}
+                            onValueChange={(val: "auto" | "free" | "busy" | "filled") => {
+                              setSlotSeatStatus(s, val);
+                              toast.success(
+                                `Slot at ${fmtTime(s)} set to ${val === "auto" ? "System Auto" : val.toUpperCase()}`,
+                              );
+                            }}
+                          >
+                            <SelectTrigger className="h-8 rounded-lg text-xs font-medium">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="auto">Auto (System)</SelectItem>
+                              <SelectItem value="free">Mark Free (Open)</SelectItem>
+                              <SelectItem value="busy">Mark Busy (Rush)</SelectItem>
+                              <SelectItem value="filled">Mark Filled (Full)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              disabled={manualCount <= 0}
+                              onClick={() => adjustManualSeats(s, -1)}
+                              className="size-7 rounded-lg"
+                              title="Decrease walk-in occupants"
+                            >
+                              <Minus className="size-3" />
+                            </Button>
+                            <span className="w-6 text-center text-xs font-bold tabular">
+                              {manualCount}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => adjustManualSeats(s, 1)}
+                              className="size-7 rounded-lg"
+                              title="Add walk-in occupants"
+                            >
+                              <Plus className="size-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant={isBlocked ? "destructive" : "ghost"}
+                            size="sm"
+                            onClick={() => {
+                              toggleBlockSlot(s);
+                              toast.info(
+                                isBlocked
+                                  ? `Unblocked slot at ${fmtTime(s)}`
+                                  : `Blocked slot at ${fmtTime(s)}`,
+                              );
+                            }}
+                            className="h-8 rounded-lg text-xs font-semibold"
+                          >
+                            {isBlocked ? "Unblock" : "Block"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </TabsContent>

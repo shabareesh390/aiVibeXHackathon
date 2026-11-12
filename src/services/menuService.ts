@@ -167,6 +167,8 @@ export async function updateCanteenConfig(patch: Partial<CanteenConfig>): Promis
       if (patch.closingHour !== undefined) dbPatch.closing_hour = patch.closingHour;
       if (patch.walkInReserve !== undefined) dbPatch.walk_in_reserve = patch.walkInReserve;
       if (patch.blockedSlots !== undefined) dbPatch.blocked_slots = patch.blockedSlots;
+      if (patch.upiId !== undefined) dbPatch.upi_id = patch.upiId;
+      if (patch.upiName !== undefined) dbPatch.upi_name = patch.upiName;
       await supabase.from("canteen_config").update(dbPatch).eq("id", "default");
     } catch {
       /* local fallback */
@@ -188,6 +190,65 @@ export async function toggleBlockSlot(slotTime: number): Promise<void> {
   if (supabase) {
     try {
       await supabase.from("canteen_config").update({ blocked_slots: next }).eq("id", "default");
+    } catch {
+      /* local fallback */
+    }
+  }
+}
+
+export async function setSlotSeatStatus(
+  slotTime: number,
+  status: "auto" | "free" | "busy" | "filled",
+): Promise<void> {
+  const s = useAppStore.getState();
+  const currentOverrides = { ...(s.config.slotOverrides ?? {}) };
+  if (status === "auto") {
+    delete currentOverrides[slotTime];
+  } else {
+    currentOverrides[slotTime] = status;
+  }
+  useAppStore.setState({
+    config: {
+      ...s.config,
+      slotOverrides: currentOverrides,
+    },
+  });
+
+  if (supabase) {
+    try {
+      await supabase
+        .from("canteen_config")
+        .update({ slot_overrides: currentOverrides })
+        .eq("id", "default");
+    } catch {
+      /* local fallback */
+    }
+  }
+}
+
+export async function adjustManualSeats(slotTime: number, delta: number): Promise<void> {
+  const s = useAppStore.getState();
+  const currentSeats = { ...(s.config.manualOccupiedSeats ?? {}) };
+  const current = currentSeats[slotTime] ?? 0;
+  const count = Math.max(0, current + delta);
+  if (count === 0) {
+    delete currentSeats[slotTime];
+  } else {
+    currentSeats[slotTime] = count;
+  }
+  useAppStore.setState({
+    config: {
+      ...s.config,
+      manualOccupiedSeats: currentSeats,
+    },
+  });
+
+  if (supabase) {
+    try {
+      await supabase
+        .from("canteen_config")
+        .update({ manual_occupied_seats: currentSeats })
+        .eq("id", "default");
     } catch {
       /* local fallback */
     }

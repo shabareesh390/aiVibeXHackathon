@@ -18,6 +18,8 @@ export const DEFAULT_CONFIG: CanteenConfig = {
   closingHour: 21,
   walkInReserve: 0.2,
   blockedSlots: [],
+  upiId: "shabareesh390@okicici",
+  upiName: "Shabareesh",
 };
 
 export const DEFAULT_STAFF: StaffMember[] = [
@@ -101,9 +103,21 @@ export function initAppStore() {
     if (raw) {
       const parsed = JSON.parse(raw) as AppData;
       if (Date.now() - parsed.seededAt < 3 * 60 * 60_000) {
+        const resolvedConfig = parsed.config ?? DEFAULT_CONFIG;
         data = {
           ...parsed,
-          config: parsed.config ?? DEFAULT_CONFIG,
+          config: {
+            ...DEFAULT_CONFIG,
+            ...resolvedConfig,
+            upiId:
+              !resolvedConfig.upiId || resolvedConfig.upiId === "canteen@upi"
+                ? DEFAULT_CONFIG.upiId
+                : resolvedConfig.upiId,
+            upiName:
+              !resolvedConfig.upiName || resolvedConfig.upiName === "Smart Canteen"
+                ? DEFAULT_CONFIG.upiName
+                : resolvedConfig.upiName,
+          },
           staff: parsed.staff ?? DEFAULT_STAFF,
         };
       }

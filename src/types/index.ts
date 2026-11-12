@@ -187,6 +187,10 @@ export interface CanteenConfig {
   closingHour: number;
   walkInReserve: number;
   blockedSlots: number[];
+  manualOccupiedSeats?: Record<number, number> | undefined;
+  slotOverrides?: Record<number, "auto" | "free" | "busy" | "filled"> | undefined;
+  upiId?: string | undefined;
+  upiName?: string | undefined;
 }
 
 export interface StaffMember {
