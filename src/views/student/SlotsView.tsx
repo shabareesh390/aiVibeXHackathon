@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  Armchair,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -52,9 +53,9 @@ export function SlotsView() {
   if (ready && !cart.length && !placed) {
     return (
       <EmptyState
-        icon={<Clock />}
-        title="Nothing to schedule yet"
-        body="Add something to your cart and we'll find you a pickup slot."
+        icon={<Armchair />}
+        title="No seats to schedule yet"
+        body="Add food items to your cart and we'll show you free seats and pickup slots."
         action={
           <Button asChild className="rounded-full">
             <Link to="/student/order">Start an order</Link>
@@ -90,16 +91,20 @@ export function SlotsView() {
   return (
     <div className="space-y-6">
       <section>
-        <h1 className="font-display text-2xl font-bold">Pick your pickup</h1>
+        <h1 className="font-display text-2xl font-bold md:text-3xl">
+          Available Seats & Free Slots
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Based on what the kitchen can actually cook.{" "}
-          {cart.length > 0 && <>Total {inr(cartTotal(cart))}.</>}
+          Real-time canteen seating & pickup capacity. Select an open slot with free seats.{" "}
+          {cart.length > 0 && (
+            <span className="font-medium text-foreground">Total {inr(cartTotal(cart))}.</span>
+          )}
         </p>
       </section>
 
       <section
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        aria-label="Recommended slots"
+        aria-label="Recommended slots with free seats"
         aria-busy={!slots}
       >
         {!slots ? (
@@ -142,6 +147,18 @@ export function SlotsView() {
                   </div>
                   <LoadBadge load={s.load} />
                 </div>
+                <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold">
+                  <Armchair className="size-4 text-primary" />
+                  <span
+                    className={cn(
+                      s.capacityLeft > 0 ? "text-foreground" : "text-destructive font-bold",
+                    )}
+                  >
+                    {s.capacityLeft > 0
+                      ? `${s.capacityLeft} seats / spots free`
+                      : "0 seats free (Full)"}
+                  </span>
+                </div>
               </div>
               <p className="mt-4 text-sm text-muted-foreground">{s.reason}</p>
             </button>
@@ -153,7 +170,7 @@ export function SlotsView() {
         <Collapsible>
           <CollapsibleTrigger asChild>
             <Button variant="outline" className="h-12 w-full justify-between rounded-2xl">
-              All slots <ChevronDown />
+              All slots & free seats <ChevronDown />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3">
@@ -167,14 +184,17 @@ export function SlotsView() {
                     setChosen(s);
                     setStep("pay");
                   }}
-                  aria-label={`${fmtTimeAmPm(s.startTime)}, ${s.reason}`}
+                  aria-label={`${fmtTimeAmPm(s.startTime)}, ${s.capacityLeft} seats free, ${s.reason}`}
                   className={cn(
-                    "rounded-xl border-2 py-3 text-center text-sm font-semibold tabular transition focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:line-through",
+                    "rounded-xl border-2 py-2 px-1 text-center tabular transition focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:line-through",
                     loadClasses[s.load].soft,
                     loadClasses[s.load].border,
                   )}
                 >
-                  {fmtTime(s.startTime)}
+                  <span className="block text-sm font-semibold">{fmtTime(s.startTime)}</span>
+                  <span className="block text-[11px] font-medium opacity-85">
+                    {s.capacityLeft > 0 ? `${s.capacityLeft} seats` : "Full"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -201,10 +221,15 @@ export function SlotsView() {
             <>
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">
-                  Pickup at {chosen && fmtTime(chosen.startTime)}
+                  Slot at {chosen && fmtTime(chosen.startTime)}{" "}
+                  {chosen && chosen.capacityLeft > 0 && (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({chosen.capacityLeft} seats free)
+                    </span>
+                  )}
                 </DialogTitle>
                 <DialogDescription>
-                  Pay now to lock this slot, or pay at the counter when you pick up.
+                  Confirm your slot and table seating. Pay now or at pickup.
                 </DialogDescription>
               </DialogHeader>
               <p className="text-center font-display text-3xl font-bold tabular">

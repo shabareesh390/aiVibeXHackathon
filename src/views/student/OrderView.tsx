@@ -333,7 +333,7 @@ export function OrderView() {
           disabled={!cart.length || unresolved.length > 0}
           onClick={() => navigate({ to: "/student/slots" })}
         >
-          Find pickup slots
+          Find available seats & slots
         </Button>
         {unresolved.length > 0 && (
           <p className="-mt-3 text-center text-sm text-muted-foreground">

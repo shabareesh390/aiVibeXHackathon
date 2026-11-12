@@ -4,13 +4,13 @@ import { SlotsView } from "@/views/student/SlotsView";
 export const Route = createFileRoute("/student/slots")({
   head: () => ({
     meta: [
-      { title: "Pick a pickup slot — Dequeue" },
+      { title: "Available Seats & Slots — Dequeue" },
       {
         name: "description",
-        content: "Pickup slots based on real kitchen capacity, colour-coded by how busy they are.",
+        content: "Canteen available seats and pickup capacity, showing free seats in real-time.",
       },
-      { property: "og:title", content: "Pick a pickup slot — Dequeue" },
-      { property: "og:description", content: "Pickup slots based on real kitchen capacity." },
+      { property: "og:title", content: "Available Seats & Slots — Dequeue" },
+      { property: "og:description", content: "Canteen available seats and pickup capacity." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

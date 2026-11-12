@@ -1,5 +1,5 @@
 import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
-import { ClipboardList, History, MapPin, UtensilsCrossed } from "lucide-react";
+import { Armchair, History, MapPin, UtensilsCrossed } from "lucide-react";
 import { Logo } from "@/components/dq/Logo";
 import { NotificationBell } from "@/components/dq/NotificationBell";
 import { ThemeToggle } from "@/components/dq/ThemeToggle";
@@ -15,7 +15,7 @@ function StudentLayout() {
   const lastOrderId = useSession((s) => s.lastOrderId);
   const tabs = [
     { to: "/student/order" as const, label: "Order", icon: UtensilsCrossed },
-    { to: "/student/slots" as const, label: "Slots", icon: ClipboardList },
+    { to: "/student/slots" as const, label: "Seats & Slots", icon: Armchair },
   ];
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col bg-background">
