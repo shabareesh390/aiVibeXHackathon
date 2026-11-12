@@ -3,6 +3,7 @@ import {
   Camera,
   CameraOff,
   CheckCircle2,
+  ExternalLink,
   Info,
   MessageSquareQuote,
   PackageCheck,
@@ -88,6 +89,8 @@ export function ScanView() {
     setCameraActive(false);
   };
 
+  const isIframe = typeof window !== "undefined" && window.self !== window.top;
+
   const startCamera = async () => {
     setCameraError(null);
     setIsPermissionDenied(false);
@@ -95,9 +98,20 @@ export function ScanView() {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera API not supported on this browser.");
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
-      });
+
+      let stream: MediaStream | null = null;
+      try {
+        // Step 1: Try flexible back camera (ideal on mobile/tablet)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } },
+        });
+      } catch (e1) {
+        // Step 2: Fallback to basic webcam (standard on Windows laptops, desktops, USB webcams)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -109,12 +123,13 @@ export function ScanView() {
       console.warn("Camera start failed:", err);
       const isDenied =
         err?.name === "NotAllowedError" ||
+        err?.name === "OverconstrainedError" ||
         err?.message?.toLowerCase().includes("permission denied") ||
         err?.message?.toLowerCase().includes("not allowed");
       setIsPermissionDenied(isDenied);
       setCameraError(
         isDenied
-          ? "Camera permission was denied by the browser or Windows system settings."
+          ? "Camera blocked by system, preview frame, or in use by another app."
           : err?.message || "Could not open camera.",
       );
       setCameraActive(false);

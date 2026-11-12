@@ -4,6 +4,7 @@ import {
   CameraOff,
   CheckCircle2,
   Clock,
+  ExternalLink,
   MessageSquareQuote,
   PackageCheck,
   QrCode,
@@ -117,9 +118,20 @@ export function OrderQRScannerModal({
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera API not supported in this browser.");
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
-      });
+
+      let stream: MediaStream | null = null;
+      try {
+        // Step 1: Flexible environment camera (smartphones/tablets)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } },
+        });
+      } catch (e1) {
+        // Step 2: Fallback to basic webcam (standard for Windows laptops, PCs, USB webcams)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -131,12 +143,13 @@ export function OrderQRScannerModal({
       console.warn("Camera start failed:", err);
       const isDenied =
         err?.name === "NotAllowedError" ||
+        err?.name === "OverconstrainedError" ||
         err?.message?.toLowerCase().includes("permission denied") ||
         err?.message?.toLowerCase().includes("not allowed");
       setIsPermissionDenied(isDenied);
       setCameraError(
         isDenied
-          ? "Camera permission was denied by the browser or Windows system settings."
+          ? "Camera blocked by system, preview frame, or in use by another app."
           : err?.message || "Could not open camera.",
       );
       setCameraActive(false);
@@ -444,19 +457,22 @@ export function OrderQRScannerModal({
               {!cameraActive && (
                 <div className="p-5 text-center text-white/90 space-y-3 max-w-sm mx-auto">
                   {isPermissionDenied ? (
-                    <div className="rounded-xl border border-destructive/40 bg-destructive/20 p-3 text-left text-xs space-y-1.5">
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/20 p-3 text-left text-xs space-y-2">
                       <div className="flex items-center gap-1.5 font-bold text-red-200">
                         <ShieldAlert className="size-4 shrink-0 text-red-400" />
-                        <span>Camera Blocked by System</span>
+                        <span>Camera Access Blocked</span>
                       </div>
-                      <ol className="list-decimal pl-4 space-y-1 text-white/80 text-[11px] leading-relaxed">
-                        <li>
-                          <strong>Browser:</strong> Click <strong>lock icon (🔒)</strong> in URL bar &rarr; Set <strong>Camera</strong> to <strong>Allow</strong>.
-                        </li>
-                        <li>
-                          <strong>Windows:</strong> <strong>Settings &rarr; Privacy & security &rarr; Camera</strong> &rarr; Switch ON <strong>"Let desktop apps access your camera"</strong>.
-                        </li>
-                      </ol>
+                      <p className="text-[11px] text-white/90">
+                        Even if allowed, access may be blocked if another app (Zoom, Teams, Camera) is using the webcam, or inside an embedded frame.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full rounded-xl text-xs font-bold gap-1.5"
+                        onClick={() => window.open(window.location.origin + "/manager/scan", "_blank")}
+                      >
+                        <ExternalLink className="size-3.5" /> Open Scanner in Real Tab
+                      </Button>
                     </div>
                   ) : (
                     <div>
