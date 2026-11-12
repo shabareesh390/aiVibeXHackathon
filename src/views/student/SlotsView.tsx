@@ -1,11 +1,15 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Armchair,
+  ArrowLeft,
+  Check,
   CheckCircle2,
   ChevronDown,
   Clock,
+  Copy,
   CreditCard,
   Loader2,
+  QrCode,
   Smartphone,
   Wallet,
 } from "lucide-react";
@@ -39,10 +43,26 @@ export function SlotsView() {
   const { cart, window: win, user, set } = useSession();
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [chosen, setChosen] = useState<Slot | null>(null);
-  const [step, setStep] = useState<"pay" | "processing" | "done">("pay");
+  const [step, setStep] = useState<"pay" | "upi_qr" | "done">("pay");
+  const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState<Order | null>(null);
   const [instructions, setInstructions] = useState("");
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+
+  const upiId = (import.meta.env["VITE_UPI_ID"] as string | undefined) || "canteen@upi";
+  const upiName = (import.meta.env["VITE_UPI_NAME"] as string | undefined) || "Smart Canteen";
+  const totalAmount = cartTotal(cart);
+  const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${totalAmount}&cu=INR&tn=${encodeURIComponent(
+    `Order for ${user?.name || "Student"}`,
+  )}`;
+
+  const copyUpiId = () => {
+    navigator.clipboard.writeText(upiId);
+    setCopied(true);
+    toast.success(`Copied UPI ID: ${upiId}`);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (!ready || !cart.length) return;
@@ -66,8 +86,8 @@ export function SlotsView() {
   }
 
   const pay = async (method: PaymentMethod) => {
-    if (!chosen) return;
-    setStep("processing");
+    if (!chosen || submitting) return;
+    setSubmitting(true);
     try {
       const order = await placeOrder({
         items: cart,
@@ -81,8 +101,9 @@ export function SlotsView() {
       set({ cart: [], text: "", unresolved: [], lastOrderId: order.id, window: { asap: true } });
       toast.success(`Order #${order.number} confirmed`);
     } catch (err: any) {
-      setStep("pay");
       toast.error(err?.message || "Failed to book slot. Please try another slot.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -213,11 +234,99 @@ export function SlotsView() {
           if (!o) {
             if (placed) navigate({ to: "/student/track/$orderId", params: { orderId: placed.id } });
             setChosen(null);
+            setStep("pay");
           }
         }}
       >
         <DialogContent className="max-w-md rounded-3xl">
-          {step !== "done" ? (
+          {step === "upi_qr" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setStep("pay")}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                >
+                  <ArrowLeft className="size-3.5" /> Back
+                </button>
+                <span className="rounded-full bg-load-free-soft px-2.5 py-0.5 text-xs font-semibold text-load-free">
+                  Instant UPI
+                </span>
+              </div>
+
+              <DialogHeader className="text-center sm:text-center">
+                <DialogTitle className="font-display text-2xl">Scan & Pay via UPI</DialogTitle>
+                <DialogDescription>
+                  Scan the QR code with GPay, PhonePe, Paytm, or BHIM.
+                </DialogDescription>
+              </DialogHeader>
+
+              <p className="text-center font-display text-3xl font-extrabold tabular text-primary">
+                {inr(totalAmount)}
+              </p>
+
+              {/* Dynamic NPCI UPI QR Code */}
+              <div className="mx-auto flex flex-col items-center justify-center rounded-2xl bg-white p-4 shadow-sm ring-1 ring-border">
+                <QRCode
+                  value={upiUri}
+                  size={176}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="M"
+                  aria-label="Scan to pay with any UPI app"
+                />
+                <p className="mt-2.5 text-[10px] font-bold tracking-widest uppercase text-muted-foreground">
+                  NPCI UPI • GPay • PhonePe • Paytm
+                </p>
+              </div>
+
+              {/* Payee Info & Copy UPI ID */}
+              <div className="flex items-center justify-between rounded-xl border bg-muted/40 p-2.5 text-xs">
+                <div>
+                  <span className="text-muted-foreground">To: </span>
+                  <span className="font-semibold text-foreground">{upiName}</span>
+                  <p className="font-mono text-muted-foreground">{upiId}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={copyUpiId}
+                  className="h-8 gap-1 rounded-lg text-xs font-medium"
+                >
+                  {copied ? (
+                    <Check className="size-3 text-load-free" />
+                  ) : (
+                    <Copy className="size-3" />
+                  )}
+                  {copied ? "Copied" : "Copy UPI"}
+                </Button>
+              </div>
+
+              {/* Mobile Direct Intent Link */}
+              <a
+                href={upiUri}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow transition hover:opacity-95 focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <Smartphone className="size-4" />
+                Pay via UPI App (Mobile)
+              </a>
+
+              {/* Confirm Payment button */}
+              <Button
+                className="h-14 w-full rounded-2xl text-base font-semibold"
+                disabled={submitting}
+                onClick={() => pay("upi")}
+              >
+                {submitting ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <CheckCircle2 className="size-5 mr-1 text-load-free" />
+                )}
+                I Have Paid — Lock Slot
+              </Button>
+            </div>
+          ) : step === "pay" ? (
             <>
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">
@@ -254,25 +363,25 @@ export function SlotsView() {
               <div className="grid gap-3">
                 <Button
                   className="h-14 rounded-2xl text-base"
-                  disabled={step === "processing"}
-                  onClick={() => pay("upi")}
+                  disabled={submitting}
+                  onClick={() => setStep("upi_qr")}
                 >
-                  {step === "processing" ? <Loader2 className="animate-spin" /> : <Smartphone />}Pay
-                  with UPI
+                  <QrCode className="size-5 mr-1" />
+                  Pay with UPI (GPay / PhonePe / QR)
                 </Button>
                 <Button
                   variant="outline"
                   className="h-14 rounded-2xl text-base"
-                  disabled={step === "processing"}
+                  disabled={submitting}
                   onClick={() => pay("counter")}
                 >
-                  <Wallet />
-                  Pay at pickup
+                  {submitting ? <Loader2 className="animate-spin" /> : <Wallet />}
+                  Pay at pickup counter
                 </Button>
               </div>
               <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                 <CreditCard className="size-3" />
-                Demo payment, no money moves.
+                Instant online UPI or pay at canteen counter.
               </p>
             </>
           ) : (
