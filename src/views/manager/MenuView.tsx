@@ -149,7 +149,6 @@ export function MenuView() {
                 <TableHead>Stock Qty</TableHead>
                 <TableHead>Station</TableHead>
                 <TableHead>Cook Min</TableHead>
-                <TableHead>Batch Size</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -243,14 +242,6 @@ export function MenuView() {
                       label={`Cook minutes for ${m.name}`}
                       min={1}
                       onCommit={(n) => save(m.id, { durationMin: n })}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <NumCell
-                      value={m.batchSize}
-                      label={`Batch size for ${m.name}`}
-                      min={1}
-                      onCommit={(n) => save(m.id, { batchSize: n })}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -422,7 +413,7 @@ function AddItemDialog() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className="col-span-2 space-y-1.5">
             <Label htmlFor="d">Cook Minutes</Label>
             <Input
               id="d"
@@ -430,16 +421,6 @@ function AddItemDialog() {
               min={1}
               value={f.durationMin}
               onChange={(e) => setF({ ...f, durationMin: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="b">Batch Size</Label>
-            <Input
-              id="b"
-              type="number"
-              min={1}
-              value={f.batchSize}
-              onChange={(e) => setF({ ...f, batchSize: e.target.value })}
             />
           </div>
           <DialogFooter className="col-span-2 pt-2">
