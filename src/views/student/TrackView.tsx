@@ -58,44 +58,53 @@ export function TrackView({ orderId }: { orderId: string }) {
       {order.status === "cancelled" ? (
         <EmptyState title="This order was cancelled" action={<Button asChild className="rounded-full"><Link to="/student/order">Order again</Link></Button>} />
       ) : (
-        <>
-          <section className="rounded-2xl border bg-card p-5 shadow-soft" aria-label="Order status">
-            <ol className="flex items-start justify-between">
-              {STEPS.map((s, i) => (
-                <li key={s.id} className="flex flex-1 flex-col items-center gap-1.5 text-center" aria-current={i === idx ? "step" : undefined}>
-                  <div className="relative flex w-full items-center justify-center">
-                    {i > 0 && <span className={cn("absolute right-1/2 h-1 w-full -translate-x-3", i <= idx ? "bg-primary" : "bg-muted")} aria-hidden />}
-                    <span className={cn("relative z-10 grid size-7 place-items-center rounded-full text-xs font-bold", i < idx ? "bg-primary text-primary-foreground" : i === idx ? "bg-primary text-primary-foreground ring-4 ring-primary/25" : "bg-muted text-muted-foreground")}>
-                      {i < idx ? <Check className="size-4" /> : i + 1}
-                    </span>
-                  </div>
-                  <span className={cn("text-[11px] font-medium", i <= idx ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          {order.status === "ready" ? (
-            <section className="rounded-2xl bg-load-free p-6 text-center text-load-foreground shadow-soft" aria-live="polite">
-              <p className="text-sm font-semibold uppercase tracking-wider">Ready on shelf</p>
-              <p className="font-display text-7xl font-extrabold tabular">{order.shelf}</p>
-              <p className="text-sm">Scan the QR at the shelf to collect.</p>
+        <div className="grid gap-6 md:grid-cols-[1fr_360px] md:items-start">
+          <div className="space-y-6">
+            <section className="rounded-2xl border bg-card p-5 shadow-soft" aria-label="Order status">
+              <ol className="flex items-start justify-between">
+                {STEPS.map((s, i) => (
+                  <li key={s.id} className="flex flex-1 flex-col items-center gap-1.5 text-center" aria-current={i === idx ? "step" : undefined}>
+                    <div className="relative flex w-full items-center justify-center">
+                      {i > 0 && <span className={cn("absolute right-1/2 h-1 w-full -translate-x-3", i <= idx ? "bg-primary" : "bg-muted")} aria-hidden />}
+                      <span className={cn("relative z-10 grid size-7 place-items-center rounded-full text-xs font-bold", i < idx ? "bg-primary text-primary-foreground" : i === idx ? "bg-primary text-primary-foreground ring-4 ring-primary/25" : "bg-muted text-muted-foreground")}>
+                        {i < idx ? <Check className="size-4" /> : i + 1}
+                      </span>
+                    </div>
+                    <span className={cn("text-[11px] font-medium", i <= idx ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
+                  </li>
+                ))}
+              </ol>
             </section>
-          ) : order.status !== "collected" ? (
-            <section className="rounded-2xl bg-warm p-6 text-center text-primary-foreground shadow-soft">
-              <p className="text-sm font-semibold uppercase tracking-wider">{secs > 0 ? "Pickup in" : "Pickup time"}</p>
-              <p className="font-display text-6xl font-extrabold tabular" aria-live="off">{secs > 0 ? `${mm}:${String(ss).padStart(2, "0")}` : "Now"}</p>
-              <p className="text-sm">{order.status === "cooking" ? "It's on the tawa right now." : "We'll start cooking so it's hot when you arrive."}</p>
-            </section>
-          ) : (
-            <EmptyState icon={<Check />} title="Collected. Enjoy your meal!" action={<Button asChild variant="outline" className="rounded-full"><Link to="/student/history">See history</Link></Button>} />
-          )}
 
-          {order.status !== "collected" && (
-            <section className="mx-auto w-fit rounded-2xl border bg-card p-4"><QRCode value={`DEQUEUE:${order.id}`} size={120} bgColor="transparent" fgColor="currentColor" aria-label={`QR code for order ${order.number}`} /></section>
-          )}
-          <CartList cart={order.items} readOnly />
-        </>
+            {order.status === "ready" ? (
+              <section className="rounded-2xl bg-load-free p-6 text-center text-load-foreground shadow-soft" aria-live="polite">
+                <p className="text-sm font-semibold uppercase tracking-wider">Ready on shelf</p>
+                <p className="font-display text-7xl font-extrabold tabular">{order.shelf}</p>
+                <p className="text-sm">Scan the QR at the shelf to collect.</p>
+              </section>
+            ) : order.status !== "collected" ? (
+              <section className="rounded-2xl bg-warm p-6 text-center text-primary-foreground shadow-soft">
+                <p className="text-sm font-semibold uppercase tracking-wider">{secs > 0 ? "Pickup in" : "Pickup time"}</p>
+                <p className="font-display text-6xl font-extrabold tabular" aria-live="off">{secs > 0 ? `${mm}:${String(ss).padStart(2, "0")}` : "Now"}</p>
+                <p className="text-sm">{order.status === "cooking" ? "It's on the tawa right now." : "We'll start cooking so it's hot when you arrive."}</p>
+              </section>
+            ) : (
+              <EmptyState icon={<Check />} title="Collected. Enjoy your meal!" action={<Button asChild variant="outline" className="rounded-full"><Link to="/student/history">See history</Link></Button>} />
+            )}
+
+            {order.status !== "collected" && (
+              <section className="mx-auto flex w-fit flex-col items-center gap-2 rounded-2xl border bg-card p-4">
+                <QRCode value={`DEQUEUE:${order.id}`} size={140} bgColor="transparent" fgColor="currentColor" aria-label={`QR code for order ${order.number}`} />
+                <span className="text-xs text-muted-foreground">Scan at canteen counter</span>
+              </section>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="font-display text-lg font-semibold md:text-xl">Order details</h2>
+            <CartList cart={order.items} readOnly />
+          </div>
+        </div>
       )}
     </div>
   );

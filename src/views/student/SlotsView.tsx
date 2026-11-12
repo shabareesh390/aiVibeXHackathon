@@ -58,20 +58,24 @@ export function SlotsView() {
         <p className="text-sm text-muted-foreground">Based on what the kitchen can actually cook. {cart.length > 0 && <>Total {inr(cartTotal(cart))}.</>}</p>
       </section>
 
-      <section className="space-y-3" aria-label="Recommended slots" aria-busy={!slots}>
-        {!slots ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />) : recommended.length === 0 ? (
-          <EmptyState title="Every slot in your window is full" body="Try widening your free window or ordering something from a quieter station." />
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Recommended slots" aria-busy={!slots}>
+        {!slots ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />) : recommended.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState title="Every slot in your window is full" body="Try widening your free window or ordering something from a quieter station." />
+          </div>
         ) : recommended.map((s, i) => (
-          <button key={s.startTime} type="button" onClick={() => { setChosen(s); setStep("pay"); }} className={cn("w-full rounded-2xl border-2 bg-card p-5 text-left shadow-soft transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-ring", i === 0 ? "border-primary" : "border-transparent")}>
-            <div className="flex items-start justify-between">
-              <div>
-                {i === 0 && <p className="mb-1 text-xs font-bold uppercase tracking-wider text-primary">Best pick</p>}
-                <p className="font-display text-4xl font-extrabold tabular">{fmtTime(s.startTime)}</p>
-                <p className="text-sm text-muted-foreground">Ready by {fmtTimeAmPm(s.readyBy)}</p>
+          <button key={s.startTime} type="button" onClick={() => { setChosen(s); setStep("pay"); }} className={cn("flex flex-col justify-between rounded-2xl border-2 bg-card p-5 text-left shadow-soft transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-ring", i === 0 ? "border-primary" : "border-transparent")}>
+            <div>
+              <div className="flex items-start justify-between">
+                <div>
+                  {i === 0 && <p className="mb-1 text-xs font-bold uppercase tracking-wider text-primary">Best pick</p>}
+                  <p className="font-display text-4xl font-extrabold tabular">{fmtTime(s.startTime)}</p>
+                  <p className="text-sm text-muted-foreground">Ready by {fmtTimeAmPm(s.readyBy)}</p>
+                </div>
+                <LoadBadge load={s.load} />
               </div>
-              <LoadBadge load={s.load} />
             </div>
-            <p className="mt-3 text-sm">{s.reason}</p>
+            <p className="mt-4 text-sm text-muted-foreground">{s.reason}</p>
           </button>
         ))}
       </section>
@@ -82,7 +86,7 @@ export function SlotsView() {
             <Button variant="outline" className="h-12 w-full justify-between rounded-2xl">All slots <ChevronDown /></Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
               {slots.map((s) => (
                 <button key={s.startTime} type="button" disabled={s.load === "red"} onClick={() => { setChosen(s); setStep("pay"); }} aria-label={`${fmtTimeAmPm(s.startTime)}, ${s.reason}`} className={cn("rounded-xl border-2 py-3 text-center text-sm font-semibold tabular transition focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:line-through", loadClasses[s.load].soft, loadClasses[s.load].border)}>
                   {fmtTime(s.startTime)}
@@ -95,7 +99,7 @@ export function SlotsView() {
       )}
 
       <Dialog open={!!chosen} onOpenChange={(o) => { if (!o) { if (placed) navigate({ to: "/student/track/$orderId", params: { orderId: placed.id } }); setChosen(null); } }}>
-        <DialogContent className="max-w-sm rounded-3xl">
+        <DialogContent className="max-w-md rounded-3xl">
           {step !== "done" ? (
             <>
               <DialogHeader>

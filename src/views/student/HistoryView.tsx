@@ -31,11 +31,22 @@ export function HistoryView() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-display text-2xl font-bold">Your orders</h1>
-      {mine.length === 0 ? <EmptyState icon={<History />} title="No orders yet" body="Your past orders show up here for quick reordering." action={<Button asChild className="rounded-full"><Link to="/student/order">Order now</Link></Button>} /> : (
-        <ul className="space-y-3">
+      <h1 className="font-display text-2xl font-bold md:text-3xl">Your orders</h1>
+      {mine.length === 0 ? (
+        <EmptyState
+          icon={<History />}
+          title="No orders yet"
+          body="Your past orders show up here for quick reordering."
+          action={
+            <Button asChild className="rounded-full">
+              <Link to="/student/order">Order now</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <ul className="grid gap-4 md:grid-cols-2">
           {mine.map((o) => (
-            <li key={o.id} className="rounded-2xl border bg-card p-4 shadow-soft">
+            <li key={o.id} className="flex flex-col justify-between rounded-2xl border bg-card p-5 shadow-soft">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-semibold">{o.items.map((l) => `${l.qty}× ${menu.find((m) => m.id === l.itemId)?.name ?? "Item"}`).join(", ")}</p>
@@ -43,9 +54,15 @@ export function HistoryView() {
                 </div>
                 <p className="font-semibold tabular">{inr(o.total)}</p>
               </div>
-              <div className="mt-3 flex gap-2">
-                {["scheduled", "cooking", "ready"].includes(o.status) && <Button asChild variant="outline" className="h-10 rounded-full"><Link to="/student/track/$orderId" params={{ orderId: o.id }}>Track</Link></Button>}
-                <Button variant="secondary" className="h-10 rounded-full" onClick={() => reorder(o)}><RotateCcw />Reorder</Button>
+              <div className="mt-4 flex gap-2">
+                {["scheduled", "cooking", "ready"].includes(o.status) && (
+                  <Button asChild variant="outline" className="h-10 rounded-full">
+                    <Link to="/student/track/$orderId" params={{ orderId: o.id }}>Track</Link>
+                  </Button>
+                )}
+                <Button variant="secondary" className="h-10 rounded-full" onClick={() => reorder(o)}>
+                  <RotateCcw />Reorder
+                </Button>
               </div>
             </li>
           ))}
